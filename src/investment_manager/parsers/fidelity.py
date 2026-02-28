@@ -28,6 +28,16 @@ def _clean_ticker(symbol: str) -> str:
     return symbol.strip().rstrip("*").strip()
 
 
+def _is_fidelity_account(account_number: str) -> bool:
+    """Return True for native Fidelity accounts.
+
+    Fidelity account numbers are alphanumeric (e.g. 'Z06906382', '242293687').
+    Linked external accounts are identified by a UUID-formatted account number
+    containing hyphens (e.g. '021b9088-8fe5-4958-a0db-014dfe9117bb').
+    """
+    return "-" not in account_number
+
+
 class FidelityParser(InstitutionParser):
     def __init__(self, registry: AccountRegistry | None = None) -> None:
         self._registry = registry or AccountRegistry()
@@ -48,6 +58,10 @@ class FidelityParser(InstitutionParser):
         with file_path.open(newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             for row in reader:
+                account_number = (row.get("Account Number") or "").strip()
+                if not _is_fidelity_account(account_number):
+                    continue
+
                 symbol = (row.get("Symbol") or "").strip()
                 if not symbol:
                     continue

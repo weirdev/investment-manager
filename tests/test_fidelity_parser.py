@@ -33,6 +33,11 @@ class TestParse:
         assert isinstance(positions, list)
         assert len(positions) == 4
 
+    def test_excludes_non_fidelity_accounts(self):
+        positions = self.parser.parse(FIXTURE)
+        tickers = {p.ticker for p in positions}
+        assert "BND" not in tickers
+
     def test_institution_name_is_fidelity(self):
         positions = self.parser.parse(FIXTURE)
         assert all(p.institution_name == "Fidelity" for p in positions)
