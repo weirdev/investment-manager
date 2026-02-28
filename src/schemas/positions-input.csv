@@ -1,0 +1,6 @@
+column_name,type,description
+institution_name,string,Name of the institution (Fidelity, Schwab, etc.)
+account_name,string,Name of the account (e.g., "Company 401k")
+account_type,string,Type of account (e.g., 401k, IRA, brokerage)
+ticker,string,Stock ticker symbol (e.g., AAPL, MSFT)
+value,float,Current value of the position in dollars
