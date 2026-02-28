@@ -1,6 +1,7 @@
 personal_data/
 .claude/*
 !.claude/commands
+!.claude/skills
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
