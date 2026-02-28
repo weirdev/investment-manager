@@ -7,6 +7,7 @@ from .enrichment import enrich, load_asset_mapping, load_asset_metadata
 from .models import Position
 from .parsers.base import InstitutionParser
 from .parsers.fidelity import FidelityParser
+from .parsers.interactive_brokers import InteractiveBrokersParser
 from .parsers.schwab import SchwabParser
 from .registry import AccountRegistry
 
@@ -14,7 +15,7 @@ _DEFAULT_DATA_DIR = Path(__file__).parents[2] / "personal_data" / "raw_account_d
 _DEFAULT_PERSONAL_DATA_DIR = Path(__file__).parents[2] / "personal_data"
 
 # All known parsers — add new ones here
-_PARSERS: list[type[InstitutionParser]] = [FidelityParser, SchwabParser]
+_PARSERS: list[type[InstitutionParser]] = [FidelityParser, SchwabParser, InteractiveBrokersParser]
 
 
 def _discover_mapping_paths(data_dir: Path) -> list[Path]:
