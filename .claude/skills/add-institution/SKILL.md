@@ -1,3 +1,8 @@
+---
+name: add-institution
+description: Add support for a new financial institution
+---
+
 Add support for a new financial institution: $ARGUMENTS
 
 Work through the following steps in order. Read the existing Fidelity and Schwab implementations before writing anything — match their patterns exactly.
