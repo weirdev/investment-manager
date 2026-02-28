@@ -45,6 +45,20 @@ def positions(data_dir: _DataDirOption = None) -> None:
 
 
 @app.command()
+def concentration(data_dir: _DataDirOption = None) -> None:
+    """Print portfolio concentration by asset class, market segment, region, and account type."""
+    resolved = _resolve_data_dir(data_dir)
+    df = pipeline.run(data_dir=resolved)
+    if df.is_empty():
+        typer.echo("No positions found.")
+        raise typer.Exit(1)
+
+    breakdown = analysis.concentration_breakdown(df)
+    with pl_options():
+        _safe_echo(str(breakdown))
+
+
+@app.command()
 def allocations(data_dir: _DataDirOption = None) -> None:
     """Print the allocation breakdown by account type and institution."""
     resolved = _resolve_data_dir(data_dir)

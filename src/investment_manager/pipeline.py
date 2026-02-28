@@ -3,6 +3,7 @@ from pathlib import Path
 
 import polars as pl
 
+from .enrichment import enrich, load_asset_mapping, load_asset_metadata
 from .models import Position
 from .parsers.base import InstitutionParser
 from .parsers.fidelity import FidelityParser
@@ -55,7 +56,7 @@ def run(
             }
         )
 
-    return pl.DataFrame(
+    df = pl.DataFrame(
         [
             {
                 "institution_name": p.institution_name,
@@ -67,3 +68,4 @@ def run(
             for p in all_positions
         ]
     )
+    return enrich(df, load_asset_mapping(), load_asset_metadata())

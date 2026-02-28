@@ -22,13 +22,18 @@ class TestRun:
 
     def test_expected_columns(self):
         df = pipeline.run(data_dir=FIXTURES_DIR, registry=_empty_registry())
-        assert set(df.columns) == {
+        assert {
             "institution_name",
             "account_name",
             "account_type",
             "ticker",
             "value",
-        }
+            "canonical_ticker",
+            "asset_class",
+            "security_type",
+            "market_segment",
+            "region",
+        }.issubset(set(df.columns))
 
     def test_has_rows(self):
         df = pipeline.run(data_dir=FIXTURES_DIR, registry=_empty_registry())
