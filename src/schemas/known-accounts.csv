@@ -1,1 +1,9 @@
 institution_name,account_name,account_type
+Fidelity,Health Savings Account,hsa
+Fidelity,Individual - 529 - TOD,529
+Fidelity,Joint WROS - TOD,brokerage
+Fidelity,META 401k,401k
+Fidelity,ROTH IRA,roth_ira
+Fidelity,Traditional IRA,traditional_ira
+Fidelity,Weirather Family Trust Act 1,trust
+Fidelity,Weirather Family Trust Act 2,trust
