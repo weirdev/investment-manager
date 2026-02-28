@@ -7,12 +7,13 @@ from .enrichment import enrich, load_asset_mapping, load_asset_metadata
 from .models import Position
 from .parsers.base import InstitutionParser
 from .parsers.fidelity import FidelityParser
+from .parsers.schwab import SchwabParser
 from .registry import AccountRegistry
 
 _DEFAULT_DATA_DIR = Path(__file__).parents[2] / "personal_data" / "raw_account_details"
 
 # All known parsers — add new ones here
-_PARSERS: list[type[InstitutionParser]] = [FidelityParser]
+_PARSERS: list[type[InstitutionParser]] = [FidelityParser, SchwabParser]
 
 
 def _get_parser(file_path: Path, registry: AccountRegistry) -> InstitutionParser | None:
