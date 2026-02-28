@@ -5,7 +5,7 @@ import pytest
 from investment_manager.parsers.fidelity import FidelityParser
 from investment_manager.registry import AccountRegistry
 
-FIXTURE = Path(__file__).parent / "fixtures" / "fidelity_sample.csv"
+FIXTURE = Path(__file__).parent / "fixtures" / "fidelity" / "fidelity_sample.csv"
 NON_FIDELITY = Path(__file__).parent / "fixtures" / "not_fidelity.csv"
 
 

@@ -30,7 +30,7 @@ def run(
     if registry is None:
         registry = AccountRegistry()
 
-    csv_files = list(data_dir.glob("*.csv"))
+    csv_files = list(data_dir.rglob("*.csv"))
     if not csv_files:
         warnings.warn(f"No CSV files found in {data_dir}", stacklevel=2)
 

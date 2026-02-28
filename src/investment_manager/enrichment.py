@@ -3,7 +3,7 @@ from pathlib import Path
 import polars as pl
 
 _DEFAULT_MAPPING_PATHS = [
-    Path(__file__).parents[2] / "personal_data" / "fidelity-asset-mapping.csv"
+    Path(__file__).parents[2] / "personal_data" / "fidelity" / "fidelity-asset-mapping.csv"
 ]
 _DEFAULT_METADATA_PATH = Path(__file__).parents[2] / "personal_data" / "asset-metadata.csv"
 
