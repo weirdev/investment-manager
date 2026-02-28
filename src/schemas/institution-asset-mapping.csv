@@ -1,0 +1,5 @@
+column_name,type,description
+account_type,string,Account type from known-accounts registry (e.g. 401k, roth_ira, brokerage)
+raw_ticker,string,Ticker symbol as it appears in the institution export (e.g. SPAXX**)
+raw_description,string,Asset description as it appears in the institution export
+canonical_ticker,string,Normalized ticker symbol to use in analysis (e.g. SPAXX)
