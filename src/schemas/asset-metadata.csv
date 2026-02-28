@@ -1,0 +1,6 @@
+column_name,type,description
+canonical_ticker,string,Canonical ticker symbol as defined in institution-asset-mapping (e.g. VOO)
+asset_class,string,Broad asset class (equities | fixed_income | precious_metals | real_estate | cash | other)
+security_type,string,Type of security (individual_equity | etf | mutual_fund | money_market | stable_value | other)
+market_segment,string,Market segment within asset class (large_cap | mid_cap | small_cap | total_market | inflation_protected | international_bond | gold | blank if not applicable)
+region,string,Geographic exposure (us | ex_us | emerging | global | blank if not applicable)
