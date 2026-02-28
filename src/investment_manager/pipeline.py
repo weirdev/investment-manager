@@ -11,9 +11,23 @@ from .parsers.schwab import SchwabParser
 from .registry import AccountRegistry
 
 _DEFAULT_DATA_DIR = Path(__file__).parents[2] / "personal_data" / "raw_account_details"
+_DEFAULT_PERSONAL_DATA_DIR = Path(__file__).parents[2] / "personal_data"
 
 # All known parsers — add new ones here
 _PARSERS: list[type[InstitutionParser]] = [FidelityParser, SchwabParser]
+
+
+def _discover_mapping_paths(data_dir: Path) -> list[Path]:
+    """Find *-asset-mapping.csv files for each institution subdir that has position CSVs."""
+    paths: list[Path] = []
+    if not data_dir.exists():
+        return paths
+    for institution_dir in sorted(data_dir.iterdir()):
+        if not institution_dir.is_dir() or not any(institution_dir.glob("*.csv")):
+            continue
+        mapping_dir = _DEFAULT_PERSONAL_DATA_DIR / institution_dir.name
+        paths.extend(sorted(mapping_dir.glob("*-asset-mapping.csv")))
+    return paths
 
 
 def _get_parser(file_path: Path, registry: AccountRegistry) -> InstitutionParser | None:
@@ -69,4 +83,5 @@ def run(
             for p in all_positions
         ]
     )
-    return enrich(df, load_asset_mapping(), load_asset_metadata())
+    mapping_paths = _discover_mapping_paths(data_dir)
+    return enrich(df, load_asset_mapping(mapping_paths), load_asset_metadata())

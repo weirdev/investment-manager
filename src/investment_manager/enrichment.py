@@ -2,9 +2,6 @@ from pathlib import Path
 
 import polars as pl
 
-_DEFAULT_MAPPING_PATHS = [
-    Path(__file__).parents[2] / "personal_data" / "fidelity" / "fidelity-asset-mapping.csv"
-]
 _DEFAULT_METADATA_PATH = Path(__file__).parents[2] / "personal_data" / "asset-metadata.csv"
 
 _MAPPING_SCHEMA = {
@@ -22,7 +19,7 @@ _METADATA_SCHEMA = {
 }
 
 
-def load_asset_mapping(paths: list[Path] = _DEFAULT_MAPPING_PATHS) -> pl.DataFrame:
+def load_asset_mapping(paths: list[Path] = []) -> pl.DataFrame:
     frames = [pl.read_csv(p, schema_overrides=_MAPPING_SCHEMA) for p in paths if p.exists()]
     if not frames:
         return pl.DataFrame(schema=_MAPPING_SCHEMA)
