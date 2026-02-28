@@ -4,7 +4,7 @@ from pathlib import Path
 
 from .models import Account
 
-_DEFAULT_PATH = Path(__file__).parents[1] / "schemas" / "known-accounts.csv"
+_DEFAULT_PATH = Path(__file__).parents[2] / "personal_data" / "known-accounts.csv"
 
 
 class AccountRegistry:
@@ -35,7 +35,7 @@ class AccountRegistry:
         if account is None:
             warnings.warn(
                 f"Account not in registry: {institution_name!r} / {account_name!r}. "
-                "Add it to src/schemas/known-accounts.csv to assign an account_type.",
+                "Add it to personal_data/known-accounts.csv to assign an account_type.",
                 stacklevel=2,
             )
             return "unknown"
