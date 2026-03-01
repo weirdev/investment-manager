@@ -6,9 +6,9 @@ A personal finance tool that aggregates investment positions across multiple bro
 
 ## Overview
 
-Drop your brokerage CSV exports into `personal_data/raw_account_details/<institution>/` and run a single command to see your full portfolio consolidated across all accounts — with positions classified by asset class, market segment, region, and account type.
+Drop your brokerage CSV exports into `personal_data/raw_account_details/<owner>/<institution>/` and run a single command to see your full portfolio consolidated across all accounts — with positions classified by asset class, market segment, region, and account type.
 
-**Supported institutions:** Fidelity, Schwab (extensible via the `/add-institution` Claude command)
+**Supported institutions:** Fidelity, Schwab, Interactive Brokers (extensible via the `/add-institution` Claude command)
 
 ---
 
@@ -26,17 +26,23 @@ python -m uv sync
 ```
 personal_data/
 ├── raw_account_details/
-│   ├── fidelity/          ← drop Fidelity CSV exports here
-│   └── schwab/            ← drop Schwab CSV exports here
+│   └── <owner>/               ← one directory per owner (e.g. "wesley", "Family Trust")
+│       ├── fidelity/          ← drop Fidelity CSV exports here
+│       ├── schwab/            ← drop Schwab CSV exports here
+│       └── interactive-brokers/  ← drop IB Flex Query exports here
 ├── fidelity/
 │   └── fidelity-asset-mapping.csv
 ├── schwab/
 │   └── schwab-asset-mapping.csv
-├── known-accounts.csv     ← maps account names → account types
+├── interactive-brokers/
+│   └── interactive-brokers-asset-mapping.csv
+├── known-accounts.csv     ← maps account names → account types and owners
 └── asset-metadata.csv     ← maps tickers → asset class, region, etc.
 ```
 
 `personal_data/` is gitignored. The schema files at `personal_data/*.csv` define what metadata is expected.
+
+Shared accounts (e.g. a joint trust held by multiple owners) can appear in multiple owner directories. The pipeline deduplicates on `(institution, account, ticker)` so they count once in the aggregate view.
 
 ---
 
@@ -129,24 +135,47 @@ shape: (6, 4)
 └────────────────┴──────────────┴─────────────┴────────────────────┘
 ```
 
+### `invest owners`
+
+Shows total value and portfolio percentage grouped by owner.
+
+```bash
+python -m uv run invest owners
+```
+
+**Example output:**
+```
+shape: (2, 3)
+┌──────────────┬─────────────┬────────────────────┐
+│ owner        ┆ total_value ┆ pct_of_portfolio   │
+│ ---          ┆ ---         ┆ ---                │
+│ str          ┆ f64         ┆ f64                │
+╞══════════════╪═════════════╪════════════════════╡
+│ wesley       ┆ 160982.10   ┆ 89.47              │
+│ Family Trust ┆ 18200.00    ┆ 10.12              │
+└──────────────┴─────────────┴────────────────────┘
+```
+
 ---
 
 ## Data Files
 
 ### `personal_data/known-accounts.csv`
 
-Maps each brokerage account name to its account type. Account names must match exactly what the parser produces (visible via `invest positions`).
+Maps each brokerage account name to its account type and owner. Account names must match exactly what the parser produces (visible via `invest positions`).
 
 ```csv
-institution_name,account_name,account_type,is_retirement
-Fidelity,Individual Brokerage,brokerage,false
-Fidelity,Roth IRA,roth_ira,true
-Schwab,Roth Contributory IRA ...567,roth_ira,true
-Schwab,Family Trust ...718,trust,false
-Schwab,Contributory ...957,traditional_ira,true
+institution_name,account_name,account_type,is_retirement,owner
+Fidelity,Individual Brokerage,brokerage,false,wesley
+Fidelity,Roth IRA,roth_ira,true,wesley
+Schwab,Roth Contributory IRA ...567,roth_ira,true,wesley
+Schwab,Family Trust ...718,trust,false,Family Trust
+Schwab,Contributory ...957,traditional_ira,true,wesley
 ```
 
 **Supported account types:** `brokerage`, `roth_ira`, `traditional_ira`, `trust`, `401k`, `529`, `hsa`
+
+The `owner` column is optional — accounts without it default to `"unknown"`. Use any label that makes sense for your situation (a name, an entity, `"joint"`, etc.).
 
 ### `personal_data/<institution>/<institution>-asset-mapping.csv`
 
@@ -225,7 +254,8 @@ class MyBrokerParser(InstitutionParser):
 
     def parse(self, file_path: Path) -> list[Position]:
         # Return list[Position] with institution_name, account_name,
-        # account_type (from registry.validate()), ticker, value
+        # account_type (from registry.validate()), owner (from registry.get_owner()),
+        # ticker, value
         ...
 ```
 
@@ -239,7 +269,7 @@ Then add `MyBrokerParser` to `_PARSERS` in `pipeline.py` — auto-discovery hand
 python -m uv run pytest tests/ -v
 ```
 
-Test fixtures live in `tests/fixtures/<institution>/` and use anonymized data with round-number values.
+Test fixtures live in `tests/fixtures/john/<institution>/` and use anonymized data with round-number values.
 
 ---
 
@@ -247,21 +277,23 @@ Test fixtures live in `tests/fixtures/<institution>/` and use anonymized data wi
 
 ```
 src/investment_manager/
-├── models.py        # Position + Account dataclasses
+├── models.py        # Position + Account dataclasses (includes owner field)
 ├── registry.py      # AccountRegistry: loads known-accounts.csv
 ├── parsers/
-│   ├── base.py      # Abstract InstitutionParser
-│   ├── fidelity.py  # Fidelity flat-CSV parser
-│   └── schwab.py    # Schwab multi-section parser
-├── pipeline.py      # Discovers CSVs, selects parsers, merges to DataFrame
+│   ├── base.py                 # Abstract InstitutionParser
+│   ├── fidelity.py             # Fidelity flat-CSV parser
+│   ├── schwab.py               # Schwab multi-section parser
+│   └── interactive_brokers.py  # Interactive Brokers Flex Query parser
+├── pipeline.py      # Discovers CSVs, selects parsers, deduplicates, merges to DataFrame
 ├── enrichment.py    # Joins asset mapping + metadata onto positions
-├── analysis.py      # aggregate_positions(), concentration_breakdown(), allocation_breakdown()
-└── cli.py           # Typer CLI: invest positions / concentration / allocations
+├── analysis.py      # aggregate_positions(), concentration_breakdown(), allocation_breakdown(), owner_breakdown()
+└── cli.py           # Typer CLI: invest positions / concentration / allocations / owners
 ```
 
 **Pipeline flow:**
 1. `pipeline.run()` recursively finds all `*.csv` files under `raw_account_details/`
 2. Each file is matched to a parser via `can_parse()`
-3. Parsers emit `list[Position]`; all are merged into a polars DataFrame
-4. `_discover_mapping_paths()` finds `*-asset-mapping.csv` files for active institutions
-5. `enrich()` joins the mapping (raw → canonical ticker) then the metadata (ticker → asset class)
+3. Parsers emit `list[Position]` (each with an `owner` from the registry); all are merged
+4. Positions are deduplicated on `(institution_name, account_name, ticker)` — shared accounts across owner directories count once
+5. `_discover_mapping_paths()` traverses `<owner>/<institution>/` dirs, collecting `*-asset-mapping.csv` paths (each institution discovered once)
+6. `enrich()` joins the mapping (raw → canonical ticker) then the metadata (ticker → asset class)
