@@ -26,6 +26,7 @@ class TestRun:
         assert {
             "institution_name",
             "account_name",
+            "account_number",
             "account_type",
             "owner",
             "ticker",
@@ -51,6 +52,7 @@ class TestRun:
         assert set(df.columns) == {
             "institution_name",
             "account_name",
+            "account_number",
             "account_type",
             "owner",
             "ticker",

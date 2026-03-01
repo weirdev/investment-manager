@@ -69,9 +69,10 @@ class TestParse:
         from investment_manager.models import Account
 
         reg = _make_registry()
-        reg._accounts[("Fidelity", "Test Brokerage")] = Account(
+        reg._accounts[("Fidelity", "X11111111")] = Account(
             institution_name="Fidelity",
             account_name="Test Brokerage",
+            account_number="X11111111",
             account_type="brokerage",
             owner="unknown",
         )

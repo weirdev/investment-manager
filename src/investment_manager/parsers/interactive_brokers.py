@@ -71,14 +71,16 @@ class InteractiveBrokersParser(InstitutionParser):
                 if value is None:
                     continue
 
+                account_id = data.get("ClientAccountID", "").strip()
                 account_name = data.get("AccountAlias", "").strip()
-                account_type = self._registry.validate(INSTITUTION, account_name)
-                owner = self._registry.get_owner(INSTITUTION, account_name)
+                account_type = self._registry.validate(INSTITUTION, account_id)
+                owner = self._registry.get_owner(INSTITUTION, account_id)
 
                 positions.append(
                     Position(
                         institution_name=INSTITUTION,
                         account_name=account_name,
+                        account_number=account_id,
                         account_type=account_type,
                         owner=owner,
                         ticker=symbol,

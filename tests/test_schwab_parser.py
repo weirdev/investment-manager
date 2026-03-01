@@ -67,6 +67,7 @@ class TestParse:
         reg._accounts[("Schwab", "Test Brokerage ...001")] = Account(
             institution_name="Schwab",
             account_name="Test Brokerage ...001",
+            account_number="Test Brokerage ...001",
             account_type="brokerage",
             owner="unknown",
         )

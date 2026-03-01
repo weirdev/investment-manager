@@ -91,6 +91,7 @@ class SchwabParser(InstitutionParser):
                     Position(
                         institution_name=INSTITUTION,
                         account_name=current_account,
+                        account_number=current_account,
                         account_type=account_type,
                         owner=owner,
                         ticker=symbol,

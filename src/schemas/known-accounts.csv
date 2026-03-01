@@ -1,6 +1,7 @@
 column_name,type,description
 institution_name,string,Name of the institution (Fidelity, Schwab, etc.)
 account_name,string,Name of the account (e.g. "Company 401k")
+account_number,string,Account number or ID as it appears in the institution's export (blank if unavailable)
 account_type,string,Type of account (e.g. 401k, roth_ira, brokerage, trust, hsa, 529)
-owner,string,Name of the account owner (e.g. "john", "Family Trust")
 is_retirement,boolean,Whether the account is a tax-advantaged retirement account (true/false)
+owner,string,Name of the account owner (e.g. "john", "Family Trust")

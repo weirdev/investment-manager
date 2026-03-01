@@ -60,9 +60,10 @@ class TestParse:
 
     def test_registry_lookup_used_for_account_type(self):
         reg = _make_registry()
-        reg._accounts[("Interactive Brokers", "Test Trust")] = Account(
+        reg._accounts[("Interactive Brokers", "U22222222")] = Account(
             institution_name="Interactive Brokers",
             account_name="Test Trust",
+            account_number="U22222222",
             account_type="trust",
             owner="unknown",
         )

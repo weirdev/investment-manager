@@ -71,7 +71,7 @@ def run(
     seen: set[tuple[str, str, str]] = set()
     deduped: list[Position] = []
     for pos in all_positions:
-        key = (pos.institution_name, pos.account_name, pos.ticker)
+        key = (pos.institution_name, pos.account_number, pos.ticker)
         if key not in seen:
             seen.add(key)
             deduped.append(pos)
@@ -82,6 +82,7 @@ def run(
             schema={
                 "institution_name": pl.Utf8,
                 "account_name": pl.Utf8,
+                "account_number": pl.Utf8,
                 "account_type": pl.Utf8,
                 "owner": pl.Utf8,
                 "ticker": pl.Utf8,
@@ -94,6 +95,7 @@ def run(
             {
                 "institution_name": p.institution_name,
                 "account_name": p.account_name,
+                "account_number": p.account_number,
                 "account_type": p.account_type,
                 "owner": p.owner,
                 "ticker": p.ticker,
