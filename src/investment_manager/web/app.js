@@ -127,8 +127,9 @@ function renderDonut(container, labels, values, title) {
     textinfo: "label+percent",
     hovertemplate: "<b>%{label}</b><br>$%{value:,.2f}<br>%{percent}<extra></extra>",
   }], {
-    title: { text: title || "", font: { size: 14 } },
-    margin: { t: 40, b: 20, l: 20, r: 20 },
+    title: { text: title || "", font: { size: 14 }, y: 0.98, yanchor: "top", yref: "container" },
+    height: 500,
+    margin: { t: 110, b: 110, l: 60, r: 60 },
     showlegend: false,
   }, { responsive: true });
 }
@@ -148,6 +149,7 @@ function renderTreemap(container, labels, values, title) {
     texttemplate: "<b>%{label}</b><br>$%{value:,.2f}",
   }], {
     title: { text: title || "", font: { size: 14 } },
+    height: 420,
     margin: { t: 40, b: 10, l: 10, r: 10 },
   }, { responsive: true });
 }
