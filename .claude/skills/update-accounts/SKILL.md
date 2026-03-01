@@ -44,3 +44,13 @@ Append the new rows to `personal_data/known-accounts.csv`. Keep rows grouped by 
 ## 4. Flag naming collisions
 
 After inserting, check whether any `(institution_name, account_name)` pair now appears more than once. If so, warn the user — the registry can only store one entry per pair, and duplicate names across owners will cause incorrect owner attribution and may trigger unwanted deduplication.
+
+---
+
+## 5. Map any new tickers
+
+Run `/update-assets` to catch any tickers from the new position files that are not yet mapped or classified:
+
+```
+/update-assets
+```

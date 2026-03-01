@@ -80,41 +80,19 @@ The `account_number` column must match exactly what the parser emits in `Positio
 
 ---
 
-## 7. Create the asset mapping
+## 7. Map tickers and asset metadata
 
-**Directory name**: must exactly match the institution subdir under `raw_account_details/`
-(e.g., `personal_data/interactive-brokers/` for `raw_account_details/interactive-brokers/`).
+Run the `/update-assets` skill to create the institution's asset mapping file and populate asset metadata for all new tickers:
 
-Create `personal_data/<institution>/<institution>-asset-mapping.csv` with columns:
-`account_type,raw_ticker,raw_description,canonical_ticker`
+```
+/update-assets institution: <InstitutionName>
+```
 
-Include an entry for every ticker that appears in the real position data. If no ticker remapping is needed, set `canonical_ticker = raw_ticker`. The pipeline's `_discover_mapping_paths()` will pick this file up automatically — no code changes needed.
+This handles creating `personal_data/<institution>/<institution>-asset-mapping.csv` if it doesn't exist, mapping raw tickers to canonical tickers, and adding missing rows to `personal_data/asset-metadata.csv`. It must finish with `Missing: 0`.
 
 ---
 
-## 8. Extend asset metadata
-
-Check `personal_data/asset-metadata.csv` first — many common tickers (VOO, VWO, VXUS, GLD, etc.) are likely already present. Only add rows for tickers not yet in the file.
-
-For each new `canonical_ticker`, add a row with:
-`canonical_ticker,asset_class,security_type,market_segment,region`
-
-Keep the file sorted alphabetically by `canonical_ticker`. Verify coverage:
-```
-python -m uv run python -c "
-import polars as pl
-from investment_manager import pipeline
-df = pipeline.run()
-inst = df.filter(pl.col('institution_name') == '<InstitutionName>')
-missing = inst.filter(pl.col('asset_class') == 'unknown').select(['ticker','account_type'])
-print(f'Missing metadata: {missing.height}')
-if missing.height: print(missing)
-"
-```
-
----
-
-## 9. Final verification
+## 8. Final verification
 
 ```
 python -m uv run pytest tests/ -v        # all tests pass
