@@ -154,6 +154,22 @@ def allocations(data_dir: _DataDirOption = None) -> None:
     _safe_echo(_total_line(df))
 
 
+@app.command()
+def serve(
+    host: str = "127.0.0.1",
+    port: int = 8000,
+    data_dir: _DataDirOption = None,
+) -> None:
+    """Start the web dashboard server."""
+    import uvicorn
+
+    from .server import create_app
+
+    resolved = _resolve_data_dir(data_dir)
+    typer.echo(f"Starting server at http://{host}:{port}")
+    uvicorn.run(create_app(data_dir=resolved), host=host, port=port)
+
+
 class pl_options:
     """Context manager to set polars display options for CLI output."""
 
