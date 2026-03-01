@@ -253,11 +253,11 @@ function renderDonut(container, labels, values, title) {
   }], {
     paper_bgcolor: "transparent",
     plot_bgcolor: "transparent",
-    title: { text: title || "", font: { size: 11, color: "#686882", family: "Outfit, sans-serif" }, y: 0.99, yanchor: "top", yref: "container" },
+    title: { text: title || "", font: { size: 15, color: "#9a98b5", family: "Outfit, sans-serif" }, y: 0.99, yanchor: "top", yref: "container" },
     height: 440,
     margin: { t: 50, b: 80, l: 30, r: 30 },
     showlegend: false,
-    font: { color: "#e2dbd0", family: "Outfit, sans-serif" },
+    font: { color: "#e2dbd0", family: "Outfit, sans-serif", size: 14 },
   }, { responsive: true, displayModeBar: false });
 }
 
@@ -277,10 +277,10 @@ function renderTreemap(container, labels, values, title) {
   }], {
     paper_bgcolor: "transparent",
     plot_bgcolor: "transparent",
-    title: { text: title || "", font: { size: 11, color: "#686882", family: "Outfit, sans-serif" } },
+    title: { text: title || "", font: { size: 15, color: "#9a98b5", family: "Outfit, sans-serif" } },
     height: 400,
     margin: { t: 30, b: 10, l: 10, r: 10 },
-    font: { color: "#e2dbd0", family: "Outfit, sans-serif" },
+    font: { color: "#e2dbd0", family: "Outfit, sans-serif", size: 14 },
   }, { responsive: true, displayModeBar: false });
 }
 
