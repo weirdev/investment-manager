@@ -2,7 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
-_DEFAULT_METADATA_PATH = Path(__file__).parents[2] / "personal_data" / "asset-metadata.csv"
+from .paths import DEFAULT_METADATA_PATH as _DEFAULT_METADATA_PATH
 
 _MAPPING_SCHEMA = {
     "account_type": pl.Utf8,

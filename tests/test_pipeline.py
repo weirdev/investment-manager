@@ -57,6 +57,11 @@ class TestRun:
             "owner",
             "ticker",
             "value",
+            "canonical_ticker",
+            "asset_class",
+            "security_type",
+            "market_segment",
+            "region",
         }
 
     def test_deduplication_of_shared_accounts(self, tmp_path):

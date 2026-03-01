@@ -6,24 +6,11 @@ from pathlib import Path
 from ..models import Position
 from ..registry import AccountRegistry
 from .base import InstitutionParser
+from .utils import parse_dollar
 
 INSTITUTION = "Schwab"
 
 _SKIP_SYMBOLS = {"Cash & Cash Investments", "Account Total", ""}
-
-# Column index of "Mkt Val (Market Value)" in Schwab position rows
-_MKT_VAL_IDX = 6
-
-
-def _parse_dollar(value: str) -> float | None:
-    """Convert a Schwab dollar string like '$1,234.56' to float."""
-    cleaned = re.sub(r"[$,]", "", value.strip())
-    if not cleaned or cleaned in {"--", "-"}:
-        return None
-    try:
-        return float(cleaned)
-    except ValueError:
-        return None
 
 
 def _is_account_name_line(line: str) -> bool:
@@ -56,6 +43,7 @@ class SchwabParser(InstitutionParser):
         positions: list[Position] = []
         current_account_name = ""
         current_account_number = ""
+        current_headers: list[str] = []
 
         with file_path.open(encoding="utf-8-sig") as f:
             for line in f:
@@ -64,14 +52,22 @@ class SchwabParser(InstitutionParser):
                 if _is_account_name_line(line):
                     current_account_name = line.strip()
                     current_account_number = _extract_account_number(line)
+                    current_headers = []
                     continue
 
-                # Skip blank lines, the global header, and per-account column headers
-                if (
-                    not line.strip()
-                    or line.startswith('"Positions for')
-                    or line.startswith('"Symbol"')
-                ):
+                # Capture per-account column headers
+                if line.startswith('"Symbol"'):
+                    try:
+                        current_headers = next(csv.reader(io.StringIO(line)))
+                    except StopIteration:
+                        pass
+                    continue
+
+                # Skip blank lines and the global header
+                if not line.strip() or line.startswith('"Positions for'):
+                    continue
+
+                if not current_headers:
                     continue
 
                 try:
@@ -86,10 +82,8 @@ class SchwabParser(InstitutionParser):
                 if symbol in _SKIP_SYMBOLS:
                     continue
 
-                if len(row) <= _MKT_VAL_IDX:
-                    continue
-
-                value = _parse_dollar(row[_MKT_VAL_IDX])
+                data = dict(zip(current_headers, row))
+                value = parse_dollar(data.get("Mkt Val (Market Value)", ""))
                 if value is None:
                     continue
 

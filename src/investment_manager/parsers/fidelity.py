@@ -1,26 +1,16 @@
 import csv
-import re
+import warnings
 from pathlib import Path
 
 from ..models import Position
 from ..registry import AccountRegistry
 from .base import InstitutionParser
+from .utils import parse_dollar
 
 INSTITUTION = "Fidelity"
 
 # Required columns that identify a Fidelity portfolio export
 _FIDELITY_REQUIRED_COLS = {"Account Number", "Account Name", "Symbol", "Current Value"}
-
-
-def _parse_dollar(value: str) -> float | None:
-    """Convert a Fidelity dollar string like '$1,234.56' or '+$1,234.56' to float."""
-    cleaned = re.sub(r"[+$,]", "", value.strip())
-    if not cleaned or cleaned == "--":
-        return None
-    try:
-        return float(cleaned)
-    except ValueError:
-        return None
 
 
 def _clean_ticker(symbol: str) -> str:
@@ -60,6 +50,10 @@ class FidelityParser(InstitutionParser):
             for row in reader:
                 account_number = (row.get("Account Number") or "").strip()
                 if not _is_fidelity_account(account_number):
+                    warnings.warn(
+                        f"Skipping linked external account {account_number!r} in {file_path.name}",
+                        stacklevel=2,
+                    )
                     continue
 
                 symbol = (row.get("Symbol") or "").strip()
@@ -71,7 +65,7 @@ class FidelityParser(InstitutionParser):
                     continue
 
                 raw_value = row.get("Current Value") or ""
-                value = _parse_dollar(raw_value)
+                value = parse_dollar(raw_value)
                 if value is None:
                     continue
 

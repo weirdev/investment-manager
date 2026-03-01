@@ -1,3 +1,4 @@
+import logging
 import sys
 from pathlib import Path
 from typing import Annotated, Optional
@@ -23,6 +24,17 @@ def _safe_echo(text: str) -> None:
 
 app = typer.Typer(help="Investment Manager — aggregate and analyze your positions.")
 
+
+@app.callback()
+def _app_callback(
+    verbose: Annotated[
+        bool,
+        typer.Option("--verbose", "-v", help="Enable verbose logging."),
+    ] = False,
+) -> None:
+    if verbose:
+        logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+
 _DataDirOption = Annotated[
     Optional[Path],
     typer.Option(
@@ -34,7 +46,8 @@ _DataDirOption = Annotated[
 
 
 def _resolve_data_dir(data_dir: Optional[Path]) -> Path:
-    return data_dir if data_dir is not None else pipeline._DEFAULT_DATA_DIR
+    from .paths import DEFAULT_DATA_DIR
+    return data_dir if data_dir is not None else DEFAULT_DATA_DIR
 
 
 @app.command()

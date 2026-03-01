@@ -4,22 +4,12 @@ from pathlib import Path
 from ..models import Position
 from ..registry import AccountRegistry
 from .base import InstitutionParser
+from .utils import parse_float
 
 INSTITUTION = "Interactive Brokers"
 
 # Columns in the first (cash) header row — used for detection
 _DETECTION_COLS = {"ClientAccountID", "AccountAlias", "Cash", "CashLong", "CashShort"}
-
-
-def _parse_float(value: str) -> float | None:
-    """Convert a plain float string like '29508.75' to float."""
-    cleaned = value.strip()
-    if not cleaned:
-        return None
-    try:
-        return float(cleaned)
-    except ValueError:
-        return None
 
 
 class InteractiveBrokersParser(InstitutionParser):
@@ -67,7 +57,7 @@ class InteractiveBrokersParser(InstitutionParser):
                     continue
 
                 raw_value = data.get("PositionValue", "").strip()
-                value = _parse_float(raw_value)
+                value = parse_float(raw_value)
                 if value is None:
                     continue
 

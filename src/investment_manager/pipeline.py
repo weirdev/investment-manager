@@ -1,3 +1,4 @@
+import logging
 import warnings
 from pathlib import Path
 
@@ -10,10 +11,11 @@ from .parsers.base import InstitutionParser
 from .parsers.fidelity import FidelityParser
 from .parsers.interactive_brokers import InteractiveBrokersParser
 from .parsers.schwab import SchwabParser
+from .paths import DEFAULT_DATA_DIR as _DEFAULT_DATA_DIR
+from .paths import PERSONAL_DATA_DIR as _DEFAULT_PERSONAL_DATA_DIR
 from .registry import AccountRegistry
 
-_DEFAULT_DATA_DIR = Path(__file__).parents[2] / "personal_data" / "raw_account_details"
-_DEFAULT_PERSONAL_DATA_DIR = Path(__file__).parents[2] / "personal_data"
+logger = logging.getLogger(__name__)
 
 # All known parsers — add new ones here
 _PARSERS: list[type[InstitutionParser]] = [FidelityParser, SchwabParser, InteractiveBrokersParser, AlightParser]
@@ -55,6 +57,7 @@ def run(
         registry = AccountRegistry()
 
     csv_files = list(data_dir.rglob("*.csv"))
+    logger.info("Discovered %d CSV file(s) in %s", len(csv_files), data_dir)
     if not csv_files:
         warnings.warn(f"No CSV files found in {data_dir}", stacklevel=2)
 
@@ -66,7 +69,9 @@ def run(
                 f"No parser found for {csv_file.name}; skipping.", stacklevel=2
             )
             continue
+        logger.info("Parsing %s with %s", csv_file.name, type(parser).__name__)
         positions = parser.parse(csv_file)
+        logger.info("Parsed %d position(s) from %s", len(positions), csv_file.name)
         all_positions.extend(positions)
 
     seen: set[tuple[str, str, str]] = set()
@@ -76,6 +81,7 @@ def run(
         if key not in seen:
             seen.add(key)
             deduped.append(pos)
+    logger.info("Deduplication: %d → %d position(s)", len(all_positions), len(deduped))
     all_positions = deduped
 
     if not all_positions:
@@ -88,6 +94,11 @@ def run(
                 "owner": pl.Utf8,
                 "ticker": pl.Utf8,
                 "value": pl.Float64,
+                "canonical_ticker": pl.Utf8,
+                "asset_class": pl.Utf8,
+                "security_type": pl.Utf8,
+                "market_segment": pl.Utf8,
+                "region": pl.Utf8,
             }
         )
 

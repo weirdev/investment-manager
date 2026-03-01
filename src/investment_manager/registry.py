@@ -3,12 +3,11 @@ import warnings
 from pathlib import Path
 
 from .models import Account
-
-_DEFAULT_PATH = Path(__file__).parents[2] / "personal_data" / "known-accounts.csv"
+from .paths import DEFAULT_ACCOUNTS_PATH
 
 
 class AccountRegistry:
-    def __init__(self, path: Path = _DEFAULT_PATH) -> None:
+    def __init__(self, path: Path = DEFAULT_ACCOUNTS_PATH) -> None:
         self._accounts: dict[tuple[str, str], Account] = {}
         if path.exists():
             self._load(path)

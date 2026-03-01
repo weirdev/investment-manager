@@ -2,7 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
-_DEFAULT_COMPOSITIONS_PATH = Path(__file__).parents[2] / "personal_data" / "fund-compositions.csv"
+from .paths import DEFAULT_COMPOSITIONS_PATH as _DEFAULT_COMPOSITIONS_PATH
 
 _COMPOSITIONS_SCHEMA = {
     "canonical_ticker": pl.Utf8,

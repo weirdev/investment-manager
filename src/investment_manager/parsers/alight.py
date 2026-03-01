@@ -1,26 +1,14 @@
 import csv
-import re
 from pathlib import Path
 
 from ..models import Position
 from ..registry import AccountRegistry
 from .base import InstitutionParser
+from .utils import parse_dollar
 
 INSTITUTION = "Alight"
 
 _DETECTION_COLS = {"Plan", "Fund Name", "Closing Balance"}
-
-
-def _parse_dollar(value: str) -> float | None:
-    """Convert a dollar string like '$95,094.44' to float."""
-    cleaned = re.sub(r"[$,]", "", value.strip())
-    if not cleaned or cleaned in {"--", "-"}:
-        return None
-    try:
-        result = float(cleaned)
-        return result if result != 0.0 else None
-    except ValueError:
-        return None
 
 
 class AlightParser(InstitutionParser):
@@ -52,8 +40,8 @@ class AlightParser(InstitutionParser):
                     continue
 
                 raw_value = row.get("Closing Balance") or ""
-                value = _parse_dollar(raw_value)
-                if value is None:
+                value = parse_dollar(raw_value)
+                if value is None or value == 0.0:
                     continue
 
                 account_type = self._registry.validate(INSTITUTION, plan)
