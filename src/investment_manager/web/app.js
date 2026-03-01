@@ -2,6 +2,12 @@
 
 const _cache = {};
 
+const CHART_COLORS = [
+  "#c9a558", "#8b7cf8", "#40c8a0", "#f4798a",
+  "#5b9cf6", "#e8874f", "#9ed464", "#f0c040",
+  "#a78bfa", "#fb7185",
+];
+
 // ── Formatters ─────────────────────────────────────────────────────────────
 
 function fmtDollar(v) {
@@ -238,23 +244,31 @@ function renderDonut(container, labels, values, title) {
   container.appendChild(el);
   Plotly.newPlot(el, [{
     type: "pie",
-    hole: 0.4,
+    hole: 0.45,
     labels,
     values,
     textinfo: "label+percent",
     hovertemplate: "<b>%{label}</b><br>$%{value:,.2f}<br>%{percent}<extra></extra>",
+    marker: {
+      colors: CHART_COLORS,
+      line: { color: "#07070f", width: 2 },
+    },
+    textfont: { family: "Outfit, sans-serif", size: 11, color: "#e2dbd0" },
   }], {
-    title: { text: title || "", font: { size: 14 }, y: 0.98, yanchor: "top", yref: "container" },
-    height: 500,
-    margin: { t: 110, b: 110, l: 60, r: 60 },
+    paper_bgcolor: "transparent",
+    plot_bgcolor:  "transparent",
+    title: title ? { text: title, font: { size: 11, color: "#686882", family: "Outfit, sans-serif" }, y: 0.99, yanchor: "top", yref: "container" } : null,
+    height: 440,
+    margin: { t: 50, b: 80, l: 30, r: 30 },
     showlegend: false,
-  }, { responsive: true });
+    font: { color: "#e2dbd0", family: "Outfit, sans-serif" },
+  }, { responsive: true, displayModeBar: false });
 }
 
 function renderTreemap(container, labels, values, title) {
   const el = document.createElement("div");
   el.className = "chart-container";
-  el.style.maxWidth = "700px";
+  el.style.maxWidth = "720px";
   container.appendChild(el);
   Plotly.newPlot(el, [{
     type: "treemap",
@@ -264,17 +278,25 @@ function renderTreemap(container, labels, values, title) {
     branchvalues: "total",
     hovertemplate: "<b>%{label}</b><br>$%{value:,.2f}<extra></extra>",
     texttemplate: "<b>%{label}</b><br>$%{value:,.2f}",
+    marker: {
+      colors: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
+      line: { color: "#07070f", width: 2 },
+    },
+    textfont: { family: "Space Mono, monospace", size: 11 },
   }], {
-    title: { text: title || "", font: { size: 14 } },
-    height: 420,
-    margin: { t: 40, b: 10, l: 10, r: 10 },
-  }, { responsive: true });
+    paper_bgcolor: "transparent",
+    plot_bgcolor:  "transparent",
+    title: title ? { text: title, font: { size: 11, color: "#686882", family: "Outfit, sans-serif" } } : null,
+    height: 400,
+    margin: { t: 30, b: 10, l: 10, r: 10 },
+    font: { color: "#e2dbd0", family: "Outfit, sans-serif" },
+  }, { responsive: true, displayModeBar: false });
 }
 
 // ── Page renderers ──────────────────────────────────────────────────────────
 
 function showPositions(view, data) {
-  view.innerHTML = "<h2>Positions</h2>";
+  view.innerHTML = `<h2>Positions</h2><p class="page-subtitle">All holdings &middot; <span class="total-value">${fmtDollar(data.total)}</span> total</p>`;
 
   // Treemap: unique ticker → sum of total_value
   const tickerMap = {};
@@ -293,7 +315,7 @@ function showPositions(view, data) {
 }
 
 function showConcentration(view, data) {
-  view.innerHTML = "<h2>Concentration</h2>";
+  view.innerHTML = `<h2>Concentration</h2><p class="page-subtitle">By asset class &middot; <span class="total-value">${fmtDollar(data.total)}</span> total</p>`;
 
   // Donut: asset_class → sum of value
   const classMap = {};
@@ -313,7 +335,7 @@ function showConcentration(view, data) {
 }
 
 function showDecomposition(view, data) {
-  view.innerHTML = "<h2>Decomposition</h2>";
+  view.innerHTML = `<h2>Decomposition</h2><p class="page-subtitle">Look-through fund analysis &middot; <span class="total-value">${fmtDollar(data.total)}</span> total</p>`;
 
   const classMap = {};
   for (const r of data.rows) {
@@ -332,7 +354,7 @@ function showDecomposition(view, data) {
 }
 
 function showAllocations(view, data) {
-  view.innerHTML = "<h2>Allocations</h2>";
+  view.innerHTML = `<h2>Allocations</h2><p class="page-subtitle">By account type &middot; <span class="total-value">${fmtDollar(data.total)}</span> total</p>`;
 
   const typeMap = {};
   for (const r of data.rows) {
@@ -350,7 +372,7 @@ function showAllocations(view, data) {
 }
 
 function showPreciousMetals(view, data) {
-  view.innerHTML = "<h2>Precious Metals</h2>";
+  view.innerHTML = `<h2>Precious Metals</h2><p class="page-subtitle">Physical &amp; ETF holdings &middot; <span class="total-value">${fmtDollar(data.metals_total)}</span> metals</p>`;
 
   const cols = ["institution_name", "account_name", "account_type", "ticker", "value", "pct_of_portfolio"];
   const totals = {

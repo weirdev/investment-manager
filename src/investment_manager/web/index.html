@@ -4,16 +4,55 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Investment Manager</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <nav id="sidebar">
-    <h1>Investments</h1>
-    <a class="nav-link" href="#/positions">Positions</a>
-    <a class="nav-link" href="#/concentration">Concentration</a>
-    <a class="nav-link" href="#/decomposition">Decomposition</a>
-    <a class="nav-link" href="#/allocations">Allocations</a>
-<a class="nav-link" href="#/precious-metals">Precious Metals</a>
+    <div class="sidebar-brand">
+      <div class="brand-mark">IM</div>
+      <span class="brand-name">Investment<br>Manager</span>
+    </div>
+    <span class="nav-section-label">Views</span>
+    <a class="nav-link" href="#/positions">
+      <svg class="nav-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round">
+        <rect x="0.7" y="0.7" width="5.1" height="5.1" rx="0.6"/>
+        <rect x="8.2" y="0.7" width="5.1" height="5.1" rx="0.6"/>
+        <rect x="0.7" y="8.2" width="5.1" height="5.1" rx="0.6"/>
+        <rect x="8.2" y="8.2" width="5.1" height="5.1" rx="0.6"/>
+      </svg>
+      Positions
+    </a>
+    <a class="nav-link" href="#/concentration">
+      <svg class="nav-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.15">
+        <circle cx="7" cy="7" r="5.8"/>
+        <circle cx="7" cy="7" r="2.6"/>
+      </svg>
+      Concentration
+    </a>
+    <a class="nav-link" href="#/decomposition">
+      <svg class="nav-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round">
+        <circle cx="7" cy="7" r="5.8"/>
+        <path d="M7 7V1.2"/>
+        <path d="M7 7L12.1 9.5"/>
+      </svg>
+      Decomposition
+    </a>
+    <a class="nav-link" href="#/allocations">
+      <svg class="nav-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12.5V8H4.5V12.5M5.5 12.5V5H9V12.5M10 12.5V2H13.5V12.5"/>
+      </svg>
+      Allocations
+    </a>
+    <a class="nav-link" href="#/precious-metals">
+      <svg class="nav-icon" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round">
+        <path d="M7 1L13 5 7 13 1 5Z"/>
+        <line x1="1" y1="5" x2="13" y2="5"/>
+      </svg>
+      Precious Metals
+    </a>
   </nav>
   <main id="view">
     <p class="placeholder">Select a view from the sidebar.</p>
