@@ -39,8 +39,9 @@ personal_data/
 │   └── interactive-brokers-asset-mapping.csv
 ├── alight/
 │   └── alight-asset-mapping.csv
-├── known-accounts.csv     ← maps account numbers → account types and owners
-└── asset-metadata.csv     ← maps tickers → asset class, region, etc.
+├── known-accounts.csv         ← maps account numbers → account types and owners
+├── asset-metadata.csv         ← maps tickers → asset class, region, etc.
+└── fund-compositions.csv      ← (optional) splits composite tickers into component asset classes
 ```
 
 `personal_data/` is gitignored. The schema files at `personal_data/*.csv` define what metadata is expected.
@@ -162,6 +163,48 @@ shape: (2, 3)
 └──────────────┴─────────────┴────────────────────┘
 Total: $181,282.10
 ```
+
+### `invest decomposition`
+
+Shows look-through concentration: composite fund positions are split into their component asset classes using `personal_data/fund-compositions.csv`. Positions with no composition entry are passed through unchanged. Output format is identical to `invest concentration`.
+
+```bash
+python -m uv run invest decomposition
+python -m uv run invest decomposition --no-account-type   # collapse across account types
+```
+
+### `invest precious-metals`
+
+Shows precious metals holdings grouped by institution, account, and ticker — with value and percentage of the full portfolio.
+
+```bash
+python -m uv run invest precious-metals
+```
+
+**Example output:**
+```
+shape: (1, 6)
+┌──────────────────┬─────────────────────┬──────────────┬────────┬───────────┬────────────────────┐
+│ institution_name ┆ account_name        ┆ account_type ┆ ticker ┆ value     ┆ pct_of_portfolio   │
+│ ---              ┆ ---                 ┆ ---          ┆ ---    ┆ ---       ┆ ---                │
+│ str              ┆ str                 ┆ str          ┆ str    ┆ f64       ┆ f64                │
+╞══════════════════╪═════════════════════╪══════════════╪════════╪═══════════╪════════════════════╡
+│ Schwab           ┆ W_Fam_Trust_1 ...718┆ trust        ┆ GLD    ┆ 11200.00  ┆ 6.22               │
+└──────────────────┴─────────────────────┴──────────────┴────────┴───────────┴────────────────────┘
+Precious metals total: $11,200.00
+Total: $181,282.10
+```
+
+### `invest serve`
+
+Starts a local web dashboard with sortable tables, column filters, column picker, interactive charts, and per-view sidebar navigation.
+
+```bash
+python -m uv run invest serve
+python -m uv run invest serve --host 0.0.0.0 --port 9000
+```
+
+Open `http://127.0.0.1:8000` in your browser. Views: Positions, Concentration, Decomposition, Allocations, Precious Metals.
 
 ---
 
@@ -285,18 +328,23 @@ Test fixtures live in `tests/fixtures/john/<institution>/` and use anonymized da
 
 ```
 src/investment_manager/
-├── models.py        # Position + Account dataclasses (includes owner field)
-├── registry.py      # AccountRegistry: loads known-accounts.csv
+├── models.py          # Position + Account dataclasses (includes owner field)
+├── registry.py        # AccountRegistry: loads known-accounts.csv
+├── paths.py           # Centralised default paths (data dir, compositions, metadata, etc.)
 ├── parsers/
 │   ├── base.py                 # Abstract InstitutionParser
+│   ├── utils.py                # Shared CSV parsing helpers
 │   ├── fidelity.py             # Fidelity flat-CSV parser
 │   ├── schwab.py               # Schwab multi-section parser
 │   ├── interactive_brokers.py  # Interactive Brokers Flex Query parser
 │   └── alight.py               # Alight 401(k) flat-CSV parser
-├── pipeline.py      # Discovers CSVs, selects parsers, deduplicates, merges to DataFrame
-├── enrichment.py    # Joins asset mapping + metadata onto positions
-├── analysis.py      # aggregate_positions(), concentration_breakdown(), allocation_breakdown(), owner_breakdown()
-└── cli.py           # Typer CLI: invest positions / concentration / allocations / owners
+├── pipeline.py        # Discovers CSVs, selects parsers, deduplicates, merges to DataFrame
+├── enrichment.py      # Joins asset mapping + metadata onto positions
+├── decomposition.py   # Fund look-through: expands composite tickers into component rows
+├── analysis.py        # aggregate_positions(), concentration_breakdown(), precious_metals_by_account(), allocation_breakdown(), owner_breakdown()
+├── server.py          # FastAPI web dashboard server and JSON API routes
+├── web/               # SPA frontend (index.html, app.js, style.css)
+└── cli.py             # Typer CLI: invest positions / concentration / decomposition / precious-metals / allocations / owners / serve
 ```
 
 **Pipeline flow:**
