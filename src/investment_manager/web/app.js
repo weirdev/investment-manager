@@ -166,10 +166,10 @@ function showPositions(view, data) {
   const values = Object.values(tickerMap);
   renderTreemap(view, labels, values, "Portfolio by Ticker");
 
-  const cols = ["ticker", "total_value", "institution_name", "account_name", "account_type", "value"];
+  const cols = ["ticker", "institution_name", "account_name", "account_type", "value"];
   renderTable(view, cols, data.rows, {
-    totals: { ticker: "TOTAL", total_value: data.total },
-    valueFields: ["total_value", "value"],
+    totals: { ticker: "TOTAL", value: data.total },
+    valueFields: ["value"],
   });
 }
 
