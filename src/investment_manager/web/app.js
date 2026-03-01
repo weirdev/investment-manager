@@ -250,14 +250,12 @@ function renderDonut(container, labels, values, title) {
     textinfo: "label+percent",
     hovertemplate: "<b>%{label}</b><br>$%{value:,.2f}<br>%{percent}<extra></extra>",
     marker: {
-      colors: CHART_COLORS,
-      line: { color: "#07070f", width: 2 },
+      colors: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
     },
-    textfont: { family: "Outfit, sans-serif", size: 11, color: "#e2dbd0" },
   }], {
     paper_bgcolor: "transparent",
     plot_bgcolor:  "transparent",
-    title: title ? { text: title, font: { size: 11, color: "#686882", family: "Outfit, sans-serif" }, y: 0.99, yanchor: "top", yref: "container" } : null,
+    title: { text: title || "", font: { size: 11, color: "#686882", family: "Outfit, sans-serif" }, y: 0.99, yanchor: "top", yref: "container" },
     height: 440,
     margin: { t: 50, b: 80, l: 30, r: 30 },
     showlegend: false,
@@ -278,15 +276,10 @@ function renderTreemap(container, labels, values, title) {
     branchvalues: "total",
     hovertemplate: "<b>%{label}</b><br>$%{value:,.2f}<extra></extra>",
     texttemplate: "<b>%{label}</b><br>$%{value:,.2f}",
-    marker: {
-      colors: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
-      line: { color: "#07070f", width: 2 },
-    },
-    textfont: { family: "Space Mono, monospace", size: 11 },
   }], {
     paper_bgcolor: "transparent",
     plot_bgcolor:  "transparent",
-    title: title ? { text: title, font: { size: 11, color: "#686882", family: "Outfit, sans-serif" } } : null,
+    title: { text: title || "", font: { size: 11, color: "#686882", family: "Outfit, sans-serif" } },
     height: 400,
     margin: { t: 30, b: 10, l: 10, r: 10 },
     font: { color: "#e2dbd0", family: "Outfit, sans-serif" },
