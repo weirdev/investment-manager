@@ -6,6 +6,7 @@ import polars as pl
 import typer
 
 from . import analysis, pipeline
+from . import decomposition as decomp
 
 
 def _total_line(df: pl.DataFrame) -> str:
@@ -61,6 +62,23 @@ def concentration(data_dir: _DataDirOption = None) -> None:
         raise typer.Exit(1)
 
     breakdown = analysis.concentration_breakdown(df)
+    with pl_options():
+        _safe_echo(str(breakdown))
+    _safe_echo(_total_line(df))
+
+
+@app.command()
+def decomposition(data_dir: _DataDirOption = None) -> None:
+    """Print look-through concentration with composite funds split into components."""
+    resolved = _resolve_data_dir(data_dir)
+    df = pipeline.run(data_dir=resolved)
+    if df.is_empty():
+        typer.echo("No positions found.")
+        raise typer.Exit(1)
+
+    compositions = decomp.load_fund_compositions()
+    decomposed = decomp.decompose(df, compositions)
+    breakdown = analysis.concentration_breakdown(decomposed)
     with pl_options():
         _safe_echo(str(breakdown))
     _safe_echo(_total_line(df))
