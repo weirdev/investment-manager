@@ -8,7 +8,7 @@ A personal finance tool that aggregates investment positions across multiple bro
 
 Drop your brokerage CSV exports into `personal_data/raw_account_details/<owner>/<institution>/` and run a single command to see your full portfolio consolidated across all accounts — with positions classified by asset class, market segment, region, and account type.
 
-**Supported institutions:** Fidelity, Schwab, Interactive Brokers (extensible via the `/add-institution` Claude command)
+**Supported institutions:** Fidelity, Schwab, Interactive Brokers, Alight (extensible via the `/add-institution` Claude command)
 
 ---
 
@@ -29,14 +29,17 @@ personal_data/
 │   └── <owner>/               ← one directory per owner (e.g. "wesley", "Family Trust")
 │       ├── fidelity/          ← drop Fidelity CSV exports here
 │       ├── schwab/            ← drop Schwab CSV exports here
-│       └── interactive-brokers/  ← drop IB Flex Query exports here
+│       ├── interactive-brokers/  ← drop IB Flex Query exports here
+│       └── alight/            ← drop Alight 401(k) exports here
 ├── fidelity/
 │   └── fidelity-asset-mapping.csv
 ├── schwab/
 │   └── schwab-asset-mapping.csv
 ├── interactive-brokers/
 │   └── interactive-brokers-asset-mapping.csv
-├── known-accounts.csv     ← maps account names → account types and owners
+├── alight/
+│   └── alight-asset-mapping.csv
+├── known-accounts.csv     ← maps account numbers → account types and owners
 └── asset-metadata.csv     ← maps tickers → asset class, region, etc.
 ```
 
@@ -79,6 +82,7 @@ shape: (12, 5)
 │ MSFT   ┆ 3800.00     ┆ Traditional IRA                      ┆ traditional… ┆ 3800.00   │
 │ GOOGL  ┆ 2950.00     ┆ Individual Brokerage                 ┆ brokerage    ┆ 2950.00   │
 └────────┴─────────────┴──────────────────────────────────────┴──────────────┴───────────┘
+Total: $181,282.10
 ```
 
 ### `invest concentration`
@@ -108,6 +112,7 @@ shape: (14, 6)
 │ real_estate      ┆ reit                 ┆ us        ┆ brokerage    ┆ 6300.00   ┆ 3.50               │
 │ real_estate      ┆ reit                 ┆ us        ┆ trust        ┆ 8200.00   ┆ 4.56               │
 └──────────────────┴──────────────────────┴───────────┴──────────────┴───────────┴────────────────────┘
+Total: $181,282.10
 ```
 
 ### `invest allocations`
@@ -133,6 +138,7 @@ shape: (6, 4)
 │ traditional_ira┆ Schwab       ┆ 7200.00     ┆ 4.00               │
 │ roth_ira       ┆ Fidelity     ┆ 4900.00     ┆ 2.72               │
 └────────────────┴──────────────┴─────────────┴────────────────────┘
+Total: $181,282.10
 ```
 
 ### `invest owners`
@@ -154,6 +160,7 @@ shape: (2, 3)
 │ wesley       ┆ 160982.10   ┆ 89.47              │
 │ Family Trust ┆ 18200.00    ┆ 10.12              │
 └──────────────┴─────────────┴────────────────────┘
+Total: $181,282.10
 ```
 
 ---
@@ -162,15 +169,15 @@ shape: (2, 3)
 
 ### `personal_data/known-accounts.csv`
 
-Maps each brokerage account name to its account type and owner. Account names must match exactly what the parser produces (visible via `invest positions`).
+Maps each brokerage account to its account type and owner. The registry keys on `(institution_name, account_number)` — `account_number` must match exactly what the parser emits (verify by reading the raw CSV). For institutions whose exports have no separate account number field (e.g. Alight), the parser uses the account name as the account number.
 
 ```csv
-institution_name,account_name,account_type,is_retirement,owner
-Fidelity,Individual Brokerage,brokerage,false,wesley
-Fidelity,Roth IRA,roth_ira,true,wesley
-Schwab,Roth Contributory IRA ...567,roth_ira,true,wesley
-Schwab,Family Trust ...718,trust,false,Family Trust
-Schwab,Contributory ...957,traditional_ira,true,wesley
+institution_name,account_name,account_number,account_type,is_retirement,owner
+Fidelity,Individual Brokerage,123456789,brokerage,false,Wesley
+Fidelity,Roth IRA,987654321,roth_ira,true,Wesley
+Schwab,Roth_Contributory_IRA ...567,567,roth_ira,true,Wesley
+Schwab,W_Fam_Trust_1 ...718,718,trust,false,Weirather Family Trust
+Alight,UBS 401(k) Plan,UBS 401(k) Plan,401k,true,Meijia
 ```
 
 **Supported account types:** `brokerage`, `roth_ira`, `traditional_ira`, `trust`, `401k`, `529`, `hsa`
@@ -253,8 +260,9 @@ class MyBrokerParser(InstitutionParser):
             return False
 
     def parse(self, file_path: Path) -> list[Position]:
-        # Return list[Position] with institution_name, account_name,
-        # account_type (from registry.validate()), owner (from registry.get_owner()),
+        # Return list[Position] with institution_name, account_name, account_number,
+        # account_type (from registry.validate(INSTITUTION, account_number)),
+        # owner (from registry.get_owner(INSTITUTION, account_number)),
         # ticker, value
         ...
 ```
@@ -283,7 +291,8 @@ src/investment_manager/
 │   ├── base.py                 # Abstract InstitutionParser
 │   ├── fidelity.py             # Fidelity flat-CSV parser
 │   ├── schwab.py               # Schwab multi-section parser
-│   └── interactive_brokers.py  # Interactive Brokers Flex Query parser
+│   ├── interactive_brokers.py  # Interactive Brokers Flex Query parser
+│   └── alight.py               # Alight 401(k) flat-CSV parser
 ├── pipeline.py      # Discovers CSVs, selects parsers, deduplicates, merges to DataFrame
 ├── enrichment.py    # Joins asset mapping + metadata onto positions
 ├── analysis.py      # aggregate_positions(), concentration_breakdown(), allocation_breakdown(), owner_breakdown()
@@ -294,6 +303,6 @@ src/investment_manager/
 1. `pipeline.run()` recursively finds all `*.csv` files under `raw_account_details/`
 2. Each file is matched to a parser via `can_parse()`
 3. Parsers emit `list[Position]` (each with an `owner` from the registry); all are merged
-4. Positions are deduplicated on `(institution_name, account_name, ticker)` — shared accounts across owner directories count once
+4. Positions are deduplicated on `(institution_name, account_number, ticker)` — shared accounts across owner directories count once
 5. `_discover_mapping_paths()` traverses `<owner>/<institution>/` dirs, collecting `*-asset-mapping.csv` paths (each institution discovered once)
 6. `enrich()` joins the mapping (raw → canonical ticker) then the metadata (ticker → asset class)
