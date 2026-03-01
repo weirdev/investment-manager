@@ -29,7 +29,7 @@ Read the raw CSV files in `personal_data/raw_account_details/<institution>/` to 
 Create `src/investment_manager/parsers/<institution_lowercase>.py` subclassing `InstitutionParser`.
 
 - `can_parse(file_path)` — detect by header columns or first-line content; return False on any exception
-- `parse(file_path)` — return `list[Position]` with institution_name, account_name, account_type (from registry), ticker, value
+- `parse(file_path)` — return `list[Position]` with institution_name, account_name, account_type (from `registry.validate()`), owner (from `registry.get_owner()`), ticker, value
 - Strip/clean tickers (trailing `**`, whitespace, etc.) and skip rows with no parseable value
 - Use `self._registry.validate(INSTITUTION, account_name)` for account_type
 - Match the code style in existing parsers
@@ -44,7 +44,7 @@ In `src/investment_manager/pipeline.py`, import the new parser class and add it 
 
 ## 4. Create an anonymized test fixture
 
-Create `tests/fixtures/<institution>/` and add a minimal CSV fixture with:
+Create `tests/fixtures/john/<institution>/` and add a minimal CSV fixture with:
 - At least 2 accounts and 3–4 positions total
 - Realistic but anonymized tickers and round-number values
 - All structural quirks of the real format (interleaved headers, trailing commas, etc.)
