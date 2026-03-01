@@ -29,9 +29,10 @@ Read the raw CSV files in `personal_data/raw_account_details/<institution>/` to 
 Create `src/investment_manager/parsers/<institution_lowercase>.py` subclassing `InstitutionParser`.
 
 - `can_parse(file_path)` — detect by header columns or first-line content; return False on any exception
-- `parse(file_path)` — return `list[Position]` with institution_name, account_name, account_type (from `registry.validate()`), owner (from `registry.get_owner()`), ticker, value
+- `parse(file_path)` — return `list[Position]` with institution_name, account_name, account_number, account_type (from `registry.validate()`), owner (from `registry.get_owner()`), ticker, value
 - Strip/clean tickers (trailing `**`, whitespace, etc.) and skip rows with no parseable value
-- Use `self._registry.validate(INSTITUTION, account_name)` for account_type
+- Use `self._registry.validate(INSTITUTION, account_number)` for account_type — the registry keys on `(institution_name, account_number)`, never on account_name
+- If the export has no account number field, use the account name (e.g., plan name) as both `account_name` and `account_number`
 - Match the code style in existing parsers
 
 ---
@@ -73,7 +74,9 @@ Run `python -m uv run pytest tests/ -v` and fix any failures before continuing.
 
 ## 6. Add accounts to the registry
 
-Add the institution's accounts to `personal_data/known-accounts.csv` with the correct `account_type` and `is_retirement` values. Account names must match exactly what the parser produces (verify by reading the raw CSV).
+Add the institution's accounts to `personal_data/known-accounts.csv` with the correct `account_type` and `is_retirement` values.
+
+The `account_number` column must match exactly what the parser emits in `Position.account_number` — this is what the registry keys on, not the account name. Verify by reading the raw CSV and tracing what value the parser will produce for that field. If the parser uses the account name as the account number (no separate number in the CSV), the `account_number` column must contain that full account name string.
 
 ---
 
