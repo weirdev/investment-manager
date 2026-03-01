@@ -1,6 +1,8 @@
 import csv
-import warnings
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from ..models import Position
 from ..registry import AccountRegistry
@@ -50,10 +52,7 @@ class FidelityParser(InstitutionParser):
             for row in reader:
                 account_number = (row.get("Account Number") or "").strip()
                 if not _is_fidelity_account(account_number):
-                    warnings.warn(
-                        f"Skipping linked external account {account_number!r} in {file_path.name}",
-                        stacklevel=2,
-                    )
+                    logger.debug("Skipping linked external account %r in %s", account_number, file_path.name)
                     continue
 
                 symbol = (row.get("Symbol") or "").strip()
