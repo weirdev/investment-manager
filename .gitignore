@@ -2,6 +2,8 @@ personal_data/
 .claude/*
 !.claude/commands
 !.claude/skills
+!.claude/hooks
+!.claude/settings.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
