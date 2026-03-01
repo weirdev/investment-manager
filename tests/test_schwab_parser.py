@@ -62,12 +62,18 @@ class TestParse:
         assert all(p.account_type == "unknown" for p in positions)
         assert all(p.owner == "unknown" for p in positions)
 
+    def test_account_numbers_extracted_from_suffix(self):
+        positions = self.parser.parse(FIXTURE)
+        numbers = {p.account_number for p in positions}
+        assert "001" in numbers
+        assert "002" in numbers
+
     def test_registry_lookup_used_for_account_type(self):
         reg = _make_registry()
-        reg._accounts[("Schwab", "Test Brokerage ...001")] = Account(
+        reg._accounts[("Schwab", "001")] = Account(
             institution_name="Schwab",
             account_name="Test Brokerage ...001",
-            account_number="Test Brokerage ...001",
+            account_number="001",
             account_type="brokerage",
             owner="unknown",
         )

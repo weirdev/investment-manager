@@ -32,6 +32,12 @@ def _is_account_name_line(line: str) -> bool:
     return bool(stripped) and not stripped.startswith('"') and "..." in stripped
 
 
+def _extract_account_number(account_name_line: str) -> str:
+    """Extract the digits after '...' from a Schwab account name line (e.g. '718' from 'W_Fam_Trust_1 ...718')."""
+    m = re.search(r"\.\.\.(\w+)", account_name_line)
+    return m.group(1) if m else account_name_line.strip()
+
+
 class SchwabParser(InstitutionParser):
     def __init__(self, registry: AccountRegistry | None = None) -> None:
         self._registry = registry or AccountRegistry()
@@ -48,14 +54,16 @@ class SchwabParser(InstitutionParser):
 
     def parse(self, file_path: Path) -> list[Position]:
         positions: list[Position] = []
-        current_account = ""
+        current_account_name = ""
+        current_account_number = ""
 
         with file_path.open(encoding="utf-8-sig") as f:
             for line in f:
                 line = line.rstrip("\n\r")
 
                 if _is_account_name_line(line):
-                    current_account = line.strip()
+                    current_account_name = line.strip()
+                    current_account_number = _extract_account_number(line)
                     continue
 
                 # Skip blank lines, the global header, and per-account column headers
@@ -85,13 +93,13 @@ class SchwabParser(InstitutionParser):
                 if value is None:
                     continue
 
-                account_type = self._registry.validate(INSTITUTION, current_account)
-                owner = self._registry.get_owner(INSTITUTION, current_account)
+                account_type = self._registry.validate(INSTITUTION, current_account_number)
+                owner = self._registry.get_owner(INSTITUTION, current_account_number)
                 positions.append(
                     Position(
                         institution_name=INSTITUTION,
-                        account_name=current_account,
-                        account_number=current_account,
+                        account_name=current_account_name,
+                        account_number=current_account_number,
                         account_type=account_type,
                         owner=owner,
                         ticker=symbol,
