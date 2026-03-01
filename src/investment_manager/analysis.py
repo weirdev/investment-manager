@@ -62,6 +62,24 @@ def owner_breakdown(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def precious_metals_by_account(df: pl.DataFrame) -> pl.DataFrame:
+    """Filter to precious metals positions; group by account and ticker."""
+    metals = df.filter(pl.col("asset_class") == "precious_metals")
+    if metals.is_empty():
+        return metals
+
+    total = df.select(pl.col("value").sum()).item()
+
+    return (
+        metals.group_by(["institution_name", "account_name", "account_type", "ticker"])
+        .agg(pl.col("value").sum())
+        .with_columns(
+            (pl.col("value") / total * 100).round(2).alias("pct_of_portfolio")
+        )
+        .sort(["institution_name", "account_name", "value"], descending=[False, False, True])
+    )
+
+
 def allocation_breakdown(df: pl.DataFrame) -> pl.DataFrame:
     """Group by account_type and institution_name; show value and % of total."""
     if df.is_empty():

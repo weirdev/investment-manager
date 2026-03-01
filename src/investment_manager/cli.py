@@ -106,6 +106,27 @@ def owners(data_dir: _DataDirOption = None) -> None:
 
 
 @app.command()
+def precious_metals(data_dir: _DataDirOption = None) -> None:
+    """Print precious metals holdings by account."""
+    resolved = _resolve_data_dir(data_dir)
+    df = pipeline.run(data_dir=resolved)
+    if df.is_empty():
+        typer.echo("No positions found.")
+        raise typer.Exit(1)
+
+    breakdown = analysis.precious_metals_by_account(df)
+    if breakdown.is_empty():
+        typer.echo("No precious metals positions found.")
+        raise typer.Exit(1)
+
+    with pl_options():
+        _safe_echo(str(breakdown))
+    metals_total = breakdown["value"].sum()
+    _safe_echo(f"Precious metals total: ${metals_total:,.2f}")
+    _safe_echo(_total_line(df))
+
+
+@app.command()
 def allocations(data_dir: _DataDirOption = None) -> None:
     """Print the allocation breakdown by account type and institution."""
     resolved = _resolve_data_dir(data_dir)
