@@ -190,7 +190,6 @@ body {
   border-radius: 8px;
   padding: 0.5rem;
   border: 1px solid var(--border);
-  animation: fadeSlideUp 0.35s ease-out 0.05s both;
 }
 
 /* ── Table wrapper ────────────────────────────────────────────────────────── */

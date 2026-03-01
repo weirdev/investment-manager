@@ -249,12 +249,10 @@ function renderDonut(container, labels, values, title) {
     values,
     textinfo: "label+percent",
     hovertemplate: "<b>%{label}</b><br>$%{value:,.2f}<br>%{percent}<extra></extra>",
-    marker: {
-      colors: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]),
-    },
+    marker: { colors: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]) },
   }], {
     paper_bgcolor: "transparent",
-    plot_bgcolor:  "transparent",
+    plot_bgcolor: "transparent",
     title: { text: title || "", font: { size: 11, color: "#686882", family: "Outfit, sans-serif" }, y: 0.99, yanchor: "top", yref: "container" },
     height: 440,
     margin: { t: 50, b: 80, l: 30, r: 30 },
@@ -278,7 +276,7 @@ function renderTreemap(container, labels, values, title) {
     texttemplate: "<b>%{label}</b><br>$%{value:,.2f}",
   }], {
     paper_bgcolor: "transparent",
-    plot_bgcolor:  "transparent",
+    plot_bgcolor: "transparent",
     title: { text: title || "", font: { size: 11, color: "#686882", family: "Outfit, sans-serif" } },
     height: 400,
     margin: { t: 30, b: 10, l: 10, r: 10 },
@@ -301,7 +299,9 @@ function showPositions(view, data) {
   renderTreemap(view, labels, values, "Portfolio by Ticker");
 
   const cols = ["ticker", "institution_name", "account_name", "account_type", "value"];
-  renderTable(view, cols, data.rows, {
+  const tableEl = document.createElement("div");
+  view.appendChild(tableEl);
+  renderTable(tableEl, cols, data.rows, {
     totals: { ticker: "TOTAL", value: data.total },
     valueFields: ["value"],
   });
@@ -319,7 +319,9 @@ function showConcentration(view, data) {
 
   const hasCols = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
   const cols = ["asset_class", "market_segment", "region", ...(hasCols.includes("account_type") ? ["account_type"] : []), "value", "pct_of_portfolio"];
-  renderTable(view, cols, data.rows, {
+  const tableEl = document.createElement("div");
+  view.appendChild(tableEl);
+  renderTable(tableEl, cols, data.rows, {
     totals: { asset_class: "TOTAL", value: data.total },
     valueFields: ["value"],
     pctFields: ["pct_of_portfolio"],
@@ -338,7 +340,9 @@ function showDecomposition(view, data) {
 
   const hasCols = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
   const cols = ["asset_class", "market_segment", "region", ...(hasCols.includes("account_type") ? ["account_type"] : []), "value", "pct_of_portfolio"];
-  renderTable(view, cols, data.rows, {
+  const tableEl = document.createElement("div");
+  view.appendChild(tableEl);
+  renderTable(tableEl, cols, data.rows, {
     totals: { asset_class: "TOTAL", value: data.total },
     valueFields: ["value"],
     pctFields: ["pct_of_portfolio"],
@@ -356,7 +360,9 @@ function showAllocations(view, data) {
   renderDonut(view, Object.keys(typeMap), Object.values(typeMap), "By Account Type");
 
   const cols = ["account_type", "institution_name", "total_value", "pct_of_portfolio"];
-  renderTable(view, cols, data.rows, {
+  const tableEl = document.createElement("div");
+  view.appendChild(tableEl);
+  renderTable(tableEl, cols, data.rows, {
     totals: { account_type: "TOTAL", total_value: data.total },
     valueFields: ["total_value"],
     pctFields: ["pct_of_portfolio"],
