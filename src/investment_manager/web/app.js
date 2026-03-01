@@ -33,27 +33,107 @@ async function fetchData(path) {
 
 // ── Table rendering ─────────────────────────────────────────────────────────
 
-function renderTable(container, columns, rows, { totals = null, valueFields = [], pctFields = [] } = {}) {
+function renderTable(container, columns, rows, { totals = null, valueFields = [], pctFields = [], total = null } = {}) {
   let sortCol = null;
   let sortDir = 1; // 1 = asc, -1 = desc
+  const filters = {};
+  const visibleCols = new Set(columns);
 
-  function buildTable() {
-    const sorted = sortCol === null ? [...rows] : [...rows].sort((a, b) => {
-      const av = a[sortCol], bv = b[sortCol];
-      if (av == null && bv == null) return 0;
-      if (av == null) return sortDir;
-      if (bv == null) return -sortDir;
-      return typeof av === "number"
-        ? (av - bv) * sortDir
-        : String(av).localeCompare(String(bv)) * sortDir;
+  // Dimension columns are all non-measure columns (used for regrouping when hidden)
+  const dimCols = columns.filter(c => !valueFields.includes(c) && !pctFields.includes(c));
+
+  function computeRows() {
+    // Apply filters against original rows
+    const filtered = rows.filter(row => {
+      for (const col of Object.keys(filters)) {
+        if (String(row[col] ?? "") !== filters[col]) return false;
+      }
+      return true;
     });
 
+    const visibleDims = dimCols.filter(c => visibleCols.has(c));
+    if (visibleDims.length === dimCols.length) return filtered; // no hidden dims — no regrouping needed
+
+    // Regroup by visible dimension columns, summing valueFields
+    const groups = new Map();
+    for (const row of filtered) {
+      const key = visibleDims.map(c => String(row[c] ?? "")).join("\u0000");
+      if (!groups.has(key)) {
+        const g = {};
+        for (const c of visibleDims) g[c] = row[c];
+        for (const c of valueFields) g[c] = 0;
+        groups.set(key, g);
+      }
+      const g = groups.get(key);
+      for (const c of valueFields) g[c] = (g[c] || 0) + (row[c] || 0);
+    }
+
+    const result = [...groups.values()];
+
+    // Recalculate pct fields relative to portfolio total
+    if (total && total > 0 && pctFields.length > 0 && valueFields.length > 0) {
+      for (const g of result) {
+        for (const pctCol of pctFields) {
+          g[pctCol] = (g[valueFields[0]] / total) * 100;
+        }
+      }
+    }
+
+    return result;
+  }
+
+  function render() {
+    const visCols = columns.filter(c => visibleCols.has(c));
+    const baseRows = computeRows();
+    const sorted = sortCol && visibleCols.has(sortCol)
+      ? [...baseRows].sort((a, b) => {
+          const av = a[sortCol], bv = b[sortCol];
+          if (av == null && bv == null) return 0;
+          if (av == null) return sortDir;
+          if (bv == null) return -sortDir;
+          return typeof av === "number"
+            ? (av - bv) * sortDir
+            : String(av).localeCompare(String(bv)) * sortDir;
+        })
+      : [...baseRows];
+
+    container.innerHTML = "";
+
+    // Column picker
+    const picker = document.createElement("div");
+    picker.className = "col-picker";
+    const pickerLabel = document.createElement("span");
+    pickerLabel.className = "col-picker-label";
+    pickerLabel.textContent = "Columns:";
+    picker.appendChild(pickerLabel);
+    for (const col of columns) {
+      const label = document.createElement("label");
+      label.className = "col-picker-item";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = visibleCols.has(col);
+      cb.addEventListener("change", () => {
+        if (cb.checked) {
+          visibleCols.add(col);
+        } else {
+          visibleCols.delete(col);
+          delete filters[col];
+          if (sortCol === col) sortCol = null;
+        }
+        render();
+      });
+      label.appendChild(cb);
+      label.append(" " + col.replace(/_/g, " "));
+      picker.appendChild(label);
+    }
+
+    // Table
     const table = document.createElement("table");
 
-    // thead
+    // thead — sort row
     const thead = document.createElement("thead");
     const hrow = document.createElement("tr");
-    for (const col of columns) {
+    for (const col of visCols) {
       const th = document.createElement("th");
       const isNum = valueFields.includes(col) || pctFields.includes(col);
       if (isNum) th.classList.add("num");
@@ -64,19 +144,55 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
       th.addEventListener("click", () => {
         if (sortCol === col) sortDir = -sortDir;
         else { sortCol = col; sortDir = -1; }
-        container.innerHTML = "";
-        container.appendChild(buildTable());
+        render();
       });
       hrow.appendChild(th);
     }
     thead.appendChild(hrow);
+
+    // thead — filter row
+    const filterRow = document.createElement("tr");
+    filterRow.className = "filter-row";
+    for (const col of visCols) {
+      const th = document.createElement("th");
+      const isNum = valueFields.includes(col) || pctFields.includes(col);
+      if (isNum) th.classList.add("num");
+
+      const uniqueVals = [...new Set(rows.map(r => r[col] ?? ""))].sort((a, b) => {
+        if (typeof a === "number" && typeof b === "number") return a - b;
+        return String(a).localeCompare(String(b));
+      });
+
+      const sel = document.createElement("select");
+      sel.className = "col-filter";
+      const allOpt = document.createElement("option");
+      allOpt.value = "";
+      allOpt.textContent = "All";
+      sel.appendChild(allOpt);
+      for (const v of uniqueVals) {
+        const opt = document.createElement("option");
+        const strV = String(v);
+        opt.value = strV;
+        opt.textContent = fmtVal(v, col, valueFields, pctFields);
+        if (filters[col] === strV) opt.selected = true;
+        sel.appendChild(opt);
+      }
+      sel.addEventListener("change", () => {
+        if (sel.value) filters[col] = sel.value;
+        else delete filters[col];
+        render();
+      });
+      th.appendChild(sel);
+      filterRow.appendChild(th);
+    }
+    thead.appendChild(filterRow);
     table.appendChild(thead);
 
     // tbody
     const tbody = document.createElement("tbody");
     for (const row of sorted) {
       const tr = document.createElement("tr");
-      for (const col of columns) {
+      for (const col of visCols) {
         const td = document.createElement("td");
         const isNum = valueFields.includes(col) || pctFields.includes(col);
         if (isNum) td.classList.add("num");
@@ -91,7 +207,7 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
     if (totals) {
       const tfoot = document.createElement("tfoot");
       const frow = document.createElement("tr");
-      for (const col of columns) {
+      for (const col of visCols) {
         const td = document.createElement("td");
         const isNum = valueFields.includes(col) || pctFields.includes(col);
         if (isNum) td.classList.add("num");
@@ -104,13 +220,14 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
       table.appendChild(tfoot);
     }
 
-    return table;
+    const wrapper = document.createElement("div");
+    wrapper.className = "table-wrapper";
+    wrapper.appendChild(picker);
+    wrapper.appendChild(table);
+    container.appendChild(wrapper);
   }
 
-  const wrapper = document.createElement("div");
-  wrapper.className = "table-wrapper";
-  wrapper.appendChild(buildTable());
-  container.appendChild(wrapper);
+  render();
 }
 
 // ── Chart rendering ─────────────────────────────────────────────────────────
@@ -191,6 +308,7 @@ function showConcentration(view, data) {
     totals: { asset_class: "TOTAL", value: data.total },
     valueFields: ["value"],
     pctFields: ["pct_of_portfolio"],
+    total: data.total,
   });
 }
 
@@ -209,6 +327,7 @@ function showDecomposition(view, data) {
     totals: { asset_class: "TOTAL", value: data.total },
     valueFields: ["value"],
     pctFields: ["pct_of_portfolio"],
+    total: data.total,
   });
 }
 
@@ -226,6 +345,7 @@ function showAllocations(view, data) {
     totals: { account_type: "TOTAL", total_value: data.total },
     valueFields: ["total_value"],
     pctFields: ["pct_of_portfolio"],
+    total: data.total,
   });
 }
 
@@ -247,6 +367,7 @@ function showPreciousMetals(view, data) {
     totals: { institution_name: "Metals total", value: data.metals_total },
     valueFields: ["value"],
     pctFields: ["pct_of_portfolio"],
+    total: data.total,
   });
 }
 
