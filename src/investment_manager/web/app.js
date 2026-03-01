@@ -229,19 +229,6 @@ function showAllocations(view, data) {
   });
 }
 
-function showOwners(view, data) {
-  view.innerHTML = "<h2>Owners</h2>";
-
-  renderDonut(view, data.rows.map(r => r.owner), data.rows.map(r => r.total_value), "By Owner");
-
-  const cols = ["owner", "total_value", "pct_of_portfolio"];
-  renderTable(view, cols, data.rows, {
-    totals: { owner: "TOTAL", total_value: data.total },
-    valueFields: ["total_value"],
-    pctFields: ["pct_of_portfolio"],
-  });
-}
-
 function showPreciousMetals(view, data) {
   view.innerHTML = "<h2>Precious Metals</h2>";
 
@@ -270,7 +257,6 @@ const ROUTES = {
   "/concentration": { api: "/api/concentration", show: showConcentration },
   "/decomposition": { api: "/api/decomposition", show: showDecomposition },
   "/allocations": { api: "/api/allocations", show: showAllocations },
-  "/owners": { api: "/api/owners", show: showOwners },
   "/precious-metals": { api: "/api/precious-metals", show: showPreciousMetals },
 };
 
