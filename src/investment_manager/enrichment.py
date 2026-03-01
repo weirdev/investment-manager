@@ -23,7 +23,7 @@ def load_asset_mapping(paths: list[Path] = []) -> pl.DataFrame:
     frames = [pl.read_csv(p, schema_overrides=_MAPPING_SCHEMA) for p in paths if p.exists()]
     if not frames:
         return pl.DataFrame(schema=_MAPPING_SCHEMA)
-    return pl.concat(frames)
+    return pl.concat(frames).unique(subset=["account_type", "raw_ticker"], keep="first")
 
 
 def load_asset_metadata(path: Path = _DEFAULT_METADATA_PATH) -> pl.DataFrame:

@@ -118,6 +118,15 @@ class TestLoadAssetMapping:
         result = load_asset_mapping(paths=[f1, f2])
         assert result.height == 2
 
+    def test_deduplicates_on_account_type_and_raw_ticker(self, tmp_path):
+        """Same (account_type, raw_ticker) in multiple files must not fan out join results."""
+        f1 = tmp_path / "inst1.csv"
+        f2 = tmp_path / "inst2.csv"
+        f1.write_text("account_type,raw_ticker,canonical_ticker\ntrust,VOO,VOO\n")
+        f2.write_text("account_type,raw_ticker,canonical_ticker\ntrust,VOO,VOO\n")
+        result = load_asset_mapping(paths=[f1, f2])
+        assert result.height == 1
+
 
 class TestLoadAssetMetadata:
     def test_returns_empty_df_when_missing(self, tmp_path):
