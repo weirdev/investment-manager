@@ -2,9 +2,15 @@ import sys
 from pathlib import Path
 from typing import Annotated, Optional
 
+import polars as pl
 import typer
 
 from . import analysis, pipeline
+
+
+def _total_line(df: pl.DataFrame) -> str:
+    total = df.select(pl.col("value").sum()).item()
+    return f"Total: ${total:,.2f}"
 
 
 def _safe_echo(text: str) -> None:
@@ -42,6 +48,7 @@ def positions(data_dir: _DataDirOption = None) -> None:
     agg = analysis.aggregate_positions(df)
     with pl_options():
         _safe_echo(str(agg))
+    _safe_echo(_total_line(df))
 
 
 @app.command()
@@ -56,6 +63,7 @@ def concentration(data_dir: _DataDirOption = None) -> None:
     breakdown = analysis.concentration_breakdown(df)
     with pl_options():
         _safe_echo(str(breakdown))
+    _safe_echo(_total_line(df))
 
 
 @app.command()
@@ -70,6 +78,7 @@ def owners(data_dir: _DataDirOption = None) -> None:
     breakdown = analysis.owner_breakdown(df)
     with pl_options():
         _safe_echo(str(breakdown))
+    _safe_echo(_total_line(df))
 
 
 @app.command()
@@ -84,17 +93,16 @@ def allocations(data_dir: _DataDirOption = None) -> None:
     breakdown = analysis.allocation_breakdown(df)
     with pl_options():
         _safe_echo(str(breakdown))
+    _safe_echo(_total_line(df))
 
 
 class pl_options:
     """Context manager to set polars display options for CLI output."""
 
     def __enter__(self):
-        import polars as pl
         pl.Config.set_tbl_rows(100)
         pl.Config.set_tbl_width_chars(120)
         return self
 
     def __exit__(self, *_):
-        import polars as pl
         pl.Config.restore_defaults()
