@@ -33,8 +33,11 @@ File contents from the `personal_data/` directory must never be written to proje
 ```bash
 python -m uv run invest positions
 python -m uv run invest concentration
+python -m uv run invest decomposition
+python -m uv run invest precious-metals
 python -m uv run invest allocations
 python -m uv run invest owners
+python -m uv run invest serve
 python -m uv run pytest tests/ -v
 ```
 
