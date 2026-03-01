@@ -22,15 +22,21 @@ def aggregate_positions(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def concentration_breakdown(df: pl.DataFrame) -> pl.DataFrame:
+def concentration_breakdown(
+    df: pl.DataFrame, group_by_account_type: bool = True
+) -> pl.DataFrame:
     """Group by asset_class, market_segment, region, account_type; show value and % of total."""
     if df.is_empty():
         return df
 
     total = df.select(pl.col("value").sum()).item()
 
+    group_cols = ["asset_class", "market_segment", "region"]
+    if group_by_account_type:
+        group_cols.append("account_type")
+
     return (
-        df.group_by(["asset_class", "market_segment", "region", "account_type"])
+        df.group_by(group_cols)
         .agg(pl.col("value").sum())
         .with_columns(
             (pl.col("value") / total * 100).round(2).alias("pct_of_portfolio")

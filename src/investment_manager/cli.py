@@ -68,7 +68,13 @@ def concentration(data_dir: _DataDirOption = None) -> None:
 
 
 @app.command()
-def decomposition(data_dir: _DataDirOption = None) -> None:
+def decomposition(
+    data_dir: _DataDirOption = None,
+    no_account_type: Annotated[
+        bool,
+        typer.Option("--no-account-type", help="Collapse across account types."),
+    ] = False,
+) -> None:
     """Print look-through concentration with composite funds split into components."""
     resolved = _resolve_data_dir(data_dir)
     df = pipeline.run(data_dir=resolved)
@@ -78,7 +84,7 @@ def decomposition(data_dir: _DataDirOption = None) -> None:
 
     compositions = decomp.load_fund_compositions()
     decomposed = decomp.decompose(df, compositions)
-    breakdown = analysis.concentration_breakdown(decomposed)
+    breakdown = analysis.concentration_breakdown(decomposed, group_by_account_type=not no_account_type)
     with pl_options():
         _safe_echo(str(breakdown))
     _safe_echo(_total_line(df))
