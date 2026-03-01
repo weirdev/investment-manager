@@ -6,7 +6,7 @@ from investment_manager.models import Account
 from investment_manager.parsers.interactive_brokers import InteractiveBrokersParser
 from investment_manager.registry import AccountRegistry
 
-FIXTURE = Path(__file__).parent / "fixtures" / "interactive-brokers" / "ib_sample.csv"
+FIXTURE = Path(__file__).parent / "fixtures" / "john" / "interactive-brokers" / "ib_sample.csv"
 NON_IB = Path(__file__).parent / "fixtures" / "interactive-brokers" / "not_ib.csv"
 
 
@@ -56,6 +56,7 @@ class TestParse:
     def test_unknown_account_type_when_registry_empty(self):
         positions = self.parser.parse(FIXTURE)
         assert all(p.account_type == "unknown" for p in positions)
+        assert all(p.owner == "unknown" for p in positions)
 
     def test_registry_lookup_used_for_account_type(self):
         reg = _make_registry()
@@ -63,6 +64,7 @@ class TestParse:
             institution_name="Interactive Brokers",
             account_name="Test Trust",
             account_type="trust",
+            owner="unknown",
         )
         parser = InteractiveBrokersParser(registry=reg)
         positions = parser.parse(FIXTURE)

@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 import polars as pl
@@ -26,6 +27,7 @@ class TestRun:
             "institution_name",
             "account_name",
             "account_type",
+            "owner",
             "ticker",
             "value",
             "canonical_ticker",
@@ -50,6 +52,21 @@ class TestRun:
             "institution_name",
             "account_name",
             "account_type",
+            "owner",
             "ticker",
             "value",
         }
+
+    def test_deduplication_of_shared_accounts(self, tmp_path):
+        """Shared accounts in multiple owner dirs appear exactly once in output."""
+        fidelity_fixture = FIXTURES_DIR / "john" / "fidelity" / "fidelity_sample.csv"
+        for owner in ("owner_a", "owner_b"):
+            dest = tmp_path / owner / "fidelity"
+            dest.mkdir(parents=True)
+            shutil.copy(fidelity_fixture, dest / "fidelity_sample.csv")
+
+        df = pipeline.run(data_dir=tmp_path, registry=_empty_registry())
+        dupes = df.filter(
+            pl.struct(["institution_name", "account_name", "ticker"]).is_duplicated()
+        )
+        assert dupes.is_empty(), "Duplicate (institution_name, account_name, ticker) rows found"

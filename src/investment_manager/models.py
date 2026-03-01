@@ -6,6 +6,7 @@ class Position:
     institution_name: str
     account_name: str
     account_type: str
+    owner: str
     ticker: str
     value: float
 
@@ -15,3 +16,4 @@ class Account:
     institution_name: str
     account_name: str
     account_type: str
+    owner: str

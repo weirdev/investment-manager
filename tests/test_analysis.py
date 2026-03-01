@@ -15,6 +15,7 @@ def _sample_df() -> pl.DataFrame:
                 "Test IRA",
             ],
             "account_type": ["brokerage", "brokerage", "brokerage", "ira"],
+            "owner": ["john", "john", "john", "mary"],
             "ticker": ["AAPL", "MSFT", "SPAXX", "VOO"],
             "value": [1500.0, 1500.0, 2000.0, 1200.0],
         }
@@ -146,4 +147,44 @@ class TestAllocationBreakdown:
             }
         )
         result = analysis.allocation_breakdown(empty)
+        assert result.is_empty()
+
+
+class TestOwnerBreakdown:
+    def test_returns_dataframe(self):
+        result = analysis.owner_breakdown(_sample_df())
+        assert isinstance(result, pl.DataFrame)
+
+    def test_has_expected_columns(self):
+        result = analysis.owner_breakdown(_sample_df())
+        assert {"owner", "total_value", "pct_of_portfolio"}.issubset(set(result.columns))
+
+    def test_sums_correctly(self):
+        result = analysis.owner_breakdown(_sample_df())
+        john_row = result.filter(pl.col("owner") == "john")
+        assert john_row["total_value"][0] == pytest.approx(5000.0)
+        mary_row = result.filter(pl.col("owner") == "mary")
+        assert mary_row["total_value"][0] == pytest.approx(1200.0)
+
+    def test_sorted_descending_by_total_value(self):
+        result = analysis.owner_breakdown(_sample_df())
+        values = result["total_value"].to_list()
+        assert values == sorted(values, reverse=True)
+
+    def test_percentages_sum_to_100(self):
+        result = analysis.owner_breakdown(_sample_df())
+        assert result["pct_of_portfolio"].sum() == pytest.approx(100.0, abs=0.1)
+
+    def test_empty_df_returns_empty(self):
+        empty = pl.DataFrame(
+            schema={
+                "institution_name": pl.Utf8,
+                "account_name": pl.Utf8,
+                "account_type": pl.Utf8,
+                "owner": pl.Utf8,
+                "ticker": pl.Utf8,
+                "value": pl.Float64,
+            }
+        )
+        result = analysis.owner_breakdown(empty)
         assert result.is_empty()

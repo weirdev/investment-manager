@@ -6,7 +6,7 @@ from investment_manager.models import Account
 from investment_manager.parsers.schwab import SchwabParser
 from investment_manager.registry import AccountRegistry
 
-FIXTURE = Path(__file__).parent / "fixtures" / "schwab" / "schwab_sample.csv"
+FIXTURE = Path(__file__).parent / "fixtures" / "john" / "schwab" / "schwab_sample.csv"
 NON_SCHWAB = Path(__file__).parent / "fixtures" / "schwab" / "not_schwab.csv"
 
 
@@ -60,6 +60,7 @@ class TestParse:
     def test_unknown_account_type_when_registry_empty(self):
         positions = self.parser.parse(FIXTURE)
         assert all(p.account_type == "unknown" for p in positions)
+        assert all(p.owner == "unknown" for p in positions)
 
     def test_registry_lookup_used_for_account_type(self):
         reg = _make_registry()
@@ -67,6 +68,7 @@ class TestParse:
             institution_name="Schwab",
             account_name="Test Brokerage ...001",
             account_type="brokerage",
+            owner="unknown",
         )
         parser = SchwabParser(registry=reg)
         positions = parser.parse(FIXTURE)

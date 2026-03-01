@@ -5,7 +5,7 @@ import pytest
 from investment_manager.parsers.fidelity import FidelityParser
 from investment_manager.registry import AccountRegistry
 
-FIXTURE = Path(__file__).parent / "fixtures" / "fidelity" / "fidelity_sample.csv"
+FIXTURE = Path(__file__).parent / "fixtures" / "john" / "fidelity" / "fidelity_sample.csv"
 NON_FIDELITY = Path(__file__).parent / "fixtures" / "not_fidelity.csv"
 
 
@@ -63,6 +63,7 @@ class TestParse:
         positions = self.parser.parse(FIXTURE)
         # Registry is empty so all accounts resolve to 'unknown'
         assert all(p.account_type == "unknown" for p in positions)
+        assert all(p.owner == "unknown" for p in positions)
 
     def test_registry_lookup_used_for_account_type(self):
         from investment_manager.models import Account
@@ -72,6 +73,7 @@ class TestParse:
             institution_name="Fidelity",
             account_name="Test Brokerage",
             account_type="brokerage",
+            owner="unknown",
         )
         parser = FidelityParser(registry=reg)
         positions = parser.parse(FIXTURE)

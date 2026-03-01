@@ -59,6 +59,20 @@ def concentration(data_dir: _DataDirOption = None) -> None:
 
 
 @app.command()
+def owners(data_dir: _DataDirOption = None) -> None:
+    """Print the owner breakdown by portfolio share."""
+    resolved = _resolve_data_dir(data_dir)
+    df = pipeline.run(data_dir=resolved)
+    if df.is_empty():
+        typer.echo("No positions found.")
+        raise typer.Exit(1)
+
+    breakdown = analysis.owner_breakdown(df)
+    with pl_options():
+        _safe_echo(str(breakdown))
+
+
+@app.command()
 def allocations(data_dir: _DataDirOption = None) -> None:
     """Print the allocation breakdown by account type and institution."""
     resolved = _resolve_data_dir(data_dir)

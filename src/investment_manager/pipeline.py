@@ -23,11 +23,18 @@ def _discover_mapping_paths(data_dir: Path) -> list[Path]:
     paths: list[Path] = []
     if not data_dir.exists():
         return paths
-    for institution_dir in sorted(data_dir.iterdir()):
-        if not institution_dir.is_dir() or not any(institution_dir.glob("*.csv")):
+    seen_institutions: set[str] = set()
+    for owner_dir in sorted(data_dir.iterdir()):
+        if not owner_dir.is_dir():
             continue
-        mapping_dir = _DEFAULT_PERSONAL_DATA_DIR / institution_dir.name
-        paths.extend(sorted(mapping_dir.glob("*-asset-mapping.csv")))
+        for institution_dir in sorted(owner_dir.iterdir()):
+            if not institution_dir.is_dir() or not any(institution_dir.glob("*.csv")):
+                continue
+            if institution_dir.name in seen_institutions:
+                continue
+            seen_institutions.add(institution_dir.name)
+            mapping_dir = _DEFAULT_PERSONAL_DATA_DIR / institution_dir.name
+            paths.extend(sorted(mapping_dir.glob("*-asset-mapping.csv")))
     return paths
 
 
@@ -61,12 +68,22 @@ def run(
         positions = parser.parse(csv_file)
         all_positions.extend(positions)
 
+    seen: set[tuple[str, str, str]] = set()
+    deduped: list[Position] = []
+    for pos in all_positions:
+        key = (pos.institution_name, pos.account_name, pos.ticker)
+        if key not in seen:
+            seen.add(key)
+            deduped.append(pos)
+    all_positions = deduped
+
     if not all_positions:
         return pl.DataFrame(
             schema={
                 "institution_name": pl.Utf8,
                 "account_name": pl.Utf8,
                 "account_type": pl.Utf8,
+                "owner": pl.Utf8,
                 "ticker": pl.Utf8,
                 "value": pl.Float64,
             }
@@ -78,6 +95,7 @@ def run(
                 "institution_name": p.institution_name,
                 "account_name": p.account_name,
                 "account_type": p.account_type,
+                "owner": p.owner,
                 "ticker": p.ticker,
                 "value": p.value,
             }

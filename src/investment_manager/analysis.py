@@ -39,6 +39,23 @@ def concentration_breakdown(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def owner_breakdown(df: pl.DataFrame) -> pl.DataFrame:
+    """Group by owner; show total value and % of portfolio, sorted descending."""
+    if df.is_empty():
+        return df
+
+    total = df.select(pl.col("value").sum()).item()
+
+    return (
+        df.group_by("owner")
+        .agg(pl.col("value").sum().alias("total_value"))
+        .with_columns(
+            (pl.col("total_value") / total * 100).round(2).alias("pct_of_portfolio")
+        )
+        .sort("total_value", descending=True)
+    )
+
+
 def allocation_breakdown(df: pl.DataFrame) -> pl.DataFrame:
     """Group by account_type and institution_name; show value and % of total."""
     if df.is_empty():

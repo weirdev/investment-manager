@@ -24,10 +24,16 @@ class AccountRegistry:
                     institution_name=row["institution_name"].strip(),
                     account_name=row["account_name"].strip(),
                     account_type=row["account_type"].strip(),
+                    owner=row.get("owner", "").strip() or "unknown",
                 )
 
     def lookup(self, institution_name: str, account_name: str) -> Account | None:
         return self._accounts.get((institution_name, account_name))
+
+    def get_owner(self, institution_name: str, account_name: str) -> str:
+        """Return owner from registry, or 'unknown' if not found."""
+        account = self.lookup(institution_name, account_name)
+        return account.owner if account is not None else "unknown"
 
     def validate(self, institution_name: str, account_name: str) -> str:
         """Return account_type from registry, or warn and return 'unknown'."""
