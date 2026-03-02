@@ -209,6 +209,8 @@ Open `http://127.0.0.1:8000` in your browser. Views: Positions, Concentration, D
 
 The sidebar includes an **Anonymize** toggle that normalizes all displayed amounts to ~$100,000 on the fly. Passing `--anonymize` to `serve` locks this toggle to the enabled state for all visitors, regardless of their individual toggle setting.
 
+When column filters are active, the percentage column header changes to **"Pct of Filtered"** and row percentages are renormalized so they always sum to 100% across the visible rows. The footer percentage cell shows 100% to reflect this. Removing all filters reverts to the original portfolio-relative percentages.
+
 ---
 
 ## Data Files
