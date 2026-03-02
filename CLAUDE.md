@@ -25,6 +25,7 @@ File contents from the `personal_data/` directory must never be written to proje
 | `/update-assets [institution: Name]` | Map unknown tickers to canonical tickers and asset metadata |
 | `/update-readme` | Sync README to reflect all changes since the last README commit |
 | `/update-claude-md` | Sync CLAUDE.md to reflect all changes since the last CLAUDE.md commit |
+| `/frontend-design` | Create distinctive, production-grade frontend interfaces |
 
 ---
 
