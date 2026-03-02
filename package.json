@@ -1,0 +1,12 @@
+{
+  "name": "investment-manager-frontend-tests",
+  "private": true,
+  "scripts": {
+    "test:frontend": "playwright test",
+    "test:frontend:update": "playwright test --update-snapshots",
+    "test:frontend:headed": "playwright test --headed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2"
+  }
+}

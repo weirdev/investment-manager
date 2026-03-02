@@ -546,8 +546,10 @@ function showPreciousMetals(view, data) {
     footerRows.push({ institution_name: "Portfolio total", value: data.total });
   }
 
-  // Custom two-row footer: render table without totals, then add footer manually
-  renderTable(view, cols, data.rows, {
+  const tableEl = document.createElement("div");
+  view.appendChild(tableEl);
+
+  renderTable(tableEl, cols, data.rows, {
     totals: { institution_name: "Metals total", value: data.metals_total },
     valueFields: ["value"],
     pctFields: ["pct_of_portfolio"],

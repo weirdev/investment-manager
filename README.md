@@ -321,9 +321,31 @@ Then add `MyBrokerParser` to `_PARSERS` in `pipeline.py` — auto-discovery hand
 
 ```bash
 python -m uv run pytest tests/ -v
+npm run test:frontend
 ```
 
 Test fixtures live in `tests/fixtures/john/<institution>/` and use anonymized data with round-number values.
+
+### Frontend Browser Tests
+
+Frontend tests use Playwright against the real FastAPI app served from fixture data in `tests/fixtures`.
+
+Setup:
+
+```bash
+npm install
+npx playwright install chromium
+```
+
+Run:
+
+```bash
+npm run test:frontend
+npm run test:frontend:headed
+npm run test:frontend:update
+```
+
+`test:frontend:update` refreshes screenshot baselines after an intentional UI change.
 
 ---
 
