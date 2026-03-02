@@ -3,6 +3,7 @@
 const _cache = {};
 let _anonymize = false;
 const THEME_STORAGE_KEY = "investment-manager-theme";
+const ANONYMIZE_STORAGE_KEY = "investment-manager-anonymize";
 const LIGHT_THEME = "light";
 const DARK_THEME = "dark";
 
@@ -44,6 +45,21 @@ function getSavedTheme() {
 function saveTheme(theme) {
   try {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (_) {}
+}
+
+function getSavedAnonymize() {
+  try {
+    const value = window.localStorage.getItem(ANONYMIZE_STORAGE_KEY);
+    if (value === "true") return true;
+    if (value === "false") return false;
+  } catch (_) {}
+  return null;
+}
+
+function saveAnonymize(enabled) {
+  try {
+    window.localStorage.setItem(ANONYMIZE_STORAGE_KEY, String(Boolean(enabled)));
   } catch (_) {}
 }
 
@@ -473,8 +489,11 @@ window.addEventListener("hashchange", render);
 window.addEventListener("DOMContentLoaded", async () => {
   const themeToggleEl = document.getElementById("theme-toggle");
   const anonymizeToggleEl = document.getElementById("anonymize-toggle");
+  const savedAnonymize = getSavedAnonymize();
 
   applyTheme(getInitialTheme());
+  if (savedAnonymize !== null) anonymizeToggleEl.checked = savedAnonymize;
+  _anonymize = anonymizeToggleEl.checked;
 
   try {
     const cfg = await fetch("/api/config").then(r => r.json());
@@ -482,6 +501,7 @@ window.addEventListener("DOMContentLoaded", async () => {
       _anonymize = true;
       anonymizeToggleEl.checked = true;
       anonymizeToggleEl.disabled = true;
+      saveAnonymize(true);
     }
   } catch (_) {}
 
@@ -494,6 +514,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
   anonymizeToggleEl.addEventListener("change", e => {
     _anonymize = e.target.checked;
+    saveAnonymize(_anonymize);
     render();
   });
 
