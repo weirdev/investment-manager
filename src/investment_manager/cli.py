@@ -44,6 +44,10 @@ _DataDirOption = Annotated[
     ),
 ]
 
+_AnonymizeOption = Annotated[
+    bool, typer.Option("--anonymize", help="Normalize amounts to ~$100,000 total")
+]
+
 
 def _resolve_data_dir(data_dir: Optional[Path]) -> Path:
     from .paths import DEFAULT_DATA_DIR
@@ -51,10 +55,10 @@ def _resolve_data_dir(data_dir: Optional[Path]) -> Path:
 
 
 @app.command()
-def positions(data_dir: _DataDirOption = None) -> None:
+def positions(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
     """Print the aggregate position view grouped by ticker."""
     resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved)
+    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -66,10 +70,10 @@ def positions(data_dir: _DataDirOption = None) -> None:
 
 
 @app.command()
-def concentration(data_dir: _DataDirOption = None) -> None:
+def concentration(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
     """Print portfolio concentration by asset class, market segment, region, and account type."""
     resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved)
+    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -87,10 +91,11 @@ def decomposition(
         bool,
         typer.Option("--no-account-type", help="Collapse across account types."),
     ] = False,
+    anonymize: _AnonymizeOption = False,
 ) -> None:
     """Print look-through concentration with composite funds split into components."""
     resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved)
+    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -104,10 +109,10 @@ def decomposition(
 
 
 @app.command()
-def owners(data_dir: _DataDirOption = None) -> None:
+def owners(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
     """Print the owner breakdown by portfolio share."""
     resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved)
+    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -119,10 +124,10 @@ def owners(data_dir: _DataDirOption = None) -> None:
 
 
 @app.command()
-def precious_metals(data_dir: _DataDirOption = None) -> None:
+def precious_metals(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
     """Print precious metals holdings by account."""
     resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved)
+    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -140,10 +145,10 @@ def precious_metals(data_dir: _DataDirOption = None) -> None:
 
 
 @app.command()
-def allocations(data_dir: _DataDirOption = None) -> None:
+def allocations(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
     """Print the allocation breakdown by account type and institution."""
     resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved)
+    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -159,6 +164,7 @@ def serve(
     host: str = "127.0.0.1",
     port: int = 8000,
     data_dir: _DataDirOption = None,
+    anonymize: _AnonymizeOption = False,
 ) -> None:
     """Start the web dashboard server."""
     import uvicorn
@@ -167,7 +173,7 @@ def serve(
 
     resolved = _resolve_data_dir(data_dir)
     typer.echo(f"Starting server at http://{host}:{port}")
-    uvicorn.run(create_app(data_dir=resolved), host=host, port=port)
+    uvicorn.run(create_app(data_dir=resolved, anonymize=anonymize), host=host, port=port)
 
 
 class pl_options:

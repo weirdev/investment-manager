@@ -1,6 +1,7 @@
 /* Investment Manager — SPA frontend */
 
 const _cache = {};
+let _anonymize = false;
 
 const CHART_COLORS = [
   "#c9a558", "#8b7cf8", "#40c8a0", "#f4798a",
@@ -29,11 +30,12 @@ function fmtVal(v, col, valueFields, pctFields) {
 // ── Fetch helper ────────────────────────────────────────────────────────────
 
 async function fetchData(path) {
-  if (_cache[path]) return _cache[path];
-  const res = await fetch(path);
-  if (!res.ok) throw new Error(`HTTP ${res.status} for ${path}`);
+  const url = _anonymize ? path + "?anonymize=true" : path;
+  if (_cache[url]) return _cache[url];
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
   const data = await res.json();
-  _cache[path] = data;
+  _cache[url] = data;
   return data;
 }
 
@@ -428,4 +430,22 @@ async function render() {
 }
 
 window.addEventListener("hashchange", render);
-window.addEventListener("DOMContentLoaded", render);
+window.addEventListener("DOMContentLoaded", async () => {
+  const toggleEl = document.getElementById("anonymize-toggle");
+
+  try {
+    const cfg = await fetch("/api/config").then(r => r.json());
+    if (cfg.anonymize_locked) {
+      _anonymize = true;
+      toggleEl.checked = true;
+      toggleEl.disabled = true;
+    }
+  } catch (_) {}
+
+  toggleEl.addEventListener("change", e => {
+    _anonymize = e.target.checked;
+    render();
+  });
+
+  render();
+});

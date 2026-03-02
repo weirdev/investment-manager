@@ -51,6 +51,7 @@ def _get_parser(file_path: Path, registry: AccountRegistry) -> InstitutionParser
 def run(
     data_dir: Path = _DEFAULT_DATA_DIR,
     registry: AccountRegistry | None = None,
+    anonymize: bool = False,
 ) -> pl.DataFrame:
     """Discover CSVs, parse each, validate, and return a merged DataFrame."""
     if registry is None:
@@ -117,4 +118,11 @@ def run(
         ]
     )
     mapping_paths = _discover_mapping_paths(data_dir)
-    return enrich(df, load_asset_mapping(mapping_paths), load_asset_metadata())
+    df = enrich(df, load_asset_mapping(mapping_paths), load_asset_metadata())
+    if anonymize:
+        total = df["value"].sum()
+        if total > 0:
+            df = df.with_columns(
+                (pl.col("value") * (100_000.0 / total)).clip(lower_bound=0.01)
+            )
+    return df
