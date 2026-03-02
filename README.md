@@ -52,7 +52,7 @@ Shared accounts (e.g. a joint trust held by multiple owners) can appear in multi
 
 ## CLI Commands
 
-All commands support `--data-dir <path>` to override the default data directory.
+All commands support `--data-dir <path>` to override the default data directory and `--anonymize` to normalize all amounts so the portfolio sums to ~$100,000 (preserving relative weights, useful for screenshots or demos).
 
 ### `invest positions`
 
@@ -202,9 +202,12 @@ Starts a local web dashboard with sortable tables, column filters, column picker
 ```bash
 python -m uv run invest serve
 python -m uv run invest serve --host 0.0.0.0 --port 9000
+python -m uv run invest serve --anonymize   # lock all API responses to anonymized values
 ```
 
 Open `http://127.0.0.1:8000` in your browser. Views: Positions, Concentration, Decomposition, Allocations, Precious Metals.
+
+The sidebar includes an **Anonymize** toggle that normalizes all displayed amounts to ~$100,000 on the fly. Passing `--anonymize` to `serve` locks this toggle to the enabled state for all visitors, regardless of their individual toggle setting.
 
 ---
 
@@ -354,3 +357,4 @@ src/investment_manager/
 4. Positions are deduplicated on `(institution_name, account_number, ticker)` — shared accounts across owner directories count once
 5. `_discover_mapping_paths()` traverses `<owner>/<institution>/` dirs, collecting `*-asset-mapping.csv` paths (each institution discovered once)
 6. `enrich()` joins the mapping (raw → canonical ticker) then the metadata (ticker → asset class)
+7. If `anonymize=True`, all `value` fields are scaled so the portfolio totals ~$100,000 (positions below $0.01 are floored to $0.01)
