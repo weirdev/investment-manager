@@ -124,6 +124,7 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
   let sortCol = null;
   let sortDir = 1; // 1 = asc, -1 = desc
   const filters = {};
+  let openFilterCol = null;
   const visibleCols = new Set(columns);
 
   // Dimension columns are all non-measure columns (used for regrouping when hidden)
@@ -133,7 +134,7 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
     // Apply filters against original rows
     const filtered = rows.filter(row => {
       for (const col of Object.keys(filters)) {
-        if (String(row[col] ?? "") !== filters[col]) return false;
+        if (filters[col] && !filters[col].has(String(row[col] ?? ""))) return false;
       }
       return true;
     });
@@ -172,6 +173,20 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
   function render() {
     const visCols = columns.filter(c => visibleCols.has(c));
     const baseRows = computeRows();
+
+    const anyFilter = Object.keys(filters).length > 0;
+    let displayTotals = totals;
+    if (totals && anyFilter) {
+      displayTotals = {};
+      for (const [k, v] of Object.entries(totals)) {
+        if (valueFields.includes(k) || pctFields.includes(k)) {
+          displayTotals[k] = baseRows.reduce((s, r) => s + (r[k] ?? 0), 0);
+        } else {
+          displayTotals[k] = "Filtered Total";
+        }
+      }
+    }
+
     const sorted = sortCol && visibleCols.has(sortCol)
       ? [...baseRows].sort((a, b) => {
           const av = a[sortCol], bv = b[sortCol];
@@ -250,26 +265,61 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
         return String(a).localeCompare(String(b));
       });
 
-      const sel = document.createElement("select");
-      sel.className = "col-filter";
-      const allOpt = document.createElement("option");
-      allOpt.value = "";
-      allOpt.textContent = "All";
-      sel.appendChild(allOpt);
-      for (const v of uniqueVals) {
-        const opt = document.createElement("option");
-        const strV = String(v);
-        opt.value = strV;
-        opt.textContent = fmtVal(v, col, valueFields, pctFields);
-        if (filters[col] === strV) opt.selected = true;
-        sel.appendChild(opt);
+      const wrap = document.createElement("div");
+      wrap.className = "col-filter-wrap";
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "filter-btn";
+      btn.dataset.col = col;
+      const active = filters[col];
+      if (active && active.size > 0) {
+        btn.classList.add("has-filter");
+        if (active.size === 1) {
+          const v = [...active][0];
+          btn.textContent = fmtVal(v, col, valueFields, pctFields) || v;
+        } else {
+          btn.textContent = `${active.size} selected`;
+        }
+      } else {
+        btn.textContent = "All";
       }
-      sel.addEventListener("change", () => {
-        if (sel.value) filters[col] = sel.value;
-        else delete filters[col];
-        render();
+
+      const dropdown = document.createElement("div");
+      dropdown.className = "filter-dropdown";
+
+      for (const v of uniqueVals) {
+        const strV = String(v);
+        const lbl = document.createElement("label");
+        lbl.className = "filter-option";
+        const chk = document.createElement("input");
+        chk.type = "checkbox";
+        chk.value = strV;
+        chk.checked = !!(active && active.has(strV));
+        chk.addEventListener("change", () => {
+          if (!filters[col]) filters[col] = new Set();
+          if (chk.checked) filters[col].add(strV);
+          else filters[col].delete(strV);
+          if (filters[col].size === 0) delete filters[col];
+          render();
+        });
+        lbl.appendChild(chk);
+        lbl.append(" " + (fmtVal(v, col, valueFields, pctFields) || strV));
+        dropdown.appendChild(lbl);
+      }
+
+      btn.addEventListener("click", e => {
+        e.stopPropagation();
+        container.querySelectorAll(".filter-dropdown.open").forEach(d => {
+          if (d !== dropdown) d.classList.remove("open");
+        });
+        const isOpen = dropdown.classList.toggle("open");
+        openFilterCol = isOpen ? col : null;
       });
-      th.appendChild(sel);
+
+      wrap.appendChild(btn);
+      wrap.appendChild(dropdown);
+      th.appendChild(wrap);
       filterRow.appendChild(th);
     }
     thead.appendChild(filterRow);
@@ -291,15 +341,15 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
     table.appendChild(tbody);
 
     // tfoot
-    if (totals) {
+    if (displayTotals) {
       const tfoot = document.createElement("tfoot");
       const frow = document.createElement("tr");
       for (const col of visCols) {
         const td = document.createElement("td");
         const isNum = valueFields.includes(col) || pctFields.includes(col);
         if (isNum) td.classList.add("num");
-        if (col in totals) {
-          td.textContent = fmtVal(totals[col], col, valueFields, pctFields);
+        if (col in displayTotals) {
+          td.textContent = fmtVal(displayTotals[col], col, valueFields, pctFields);
         }
         frow.appendChild(td);
       }
@@ -312,7 +362,20 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
     wrapper.appendChild(picker);
     wrapper.appendChild(table);
     container.appendChild(wrapper);
+
+    if (openFilterCol !== null) {
+      const openBtn = container.querySelector(`.filter-btn[data-col="${CSS.escape(openFilterCol)}"]`);
+      openBtn?.nextElementSibling?.classList.add("open");
+    }
   }
+
+  document.addEventListener("click", () => {
+    if (openFilterCol !== null) {
+      openFilterCol = null;
+      container.querySelectorAll(".filter-dropdown.open")
+        .forEach(d => d.classList.remove("open"));
+    }
+  });
 
   render();
 }

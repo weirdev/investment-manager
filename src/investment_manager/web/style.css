@@ -387,7 +387,7 @@ table {
 thead {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 100;
 }
 
 th {
@@ -468,7 +468,11 @@ th.num {
 
 .filter-row th:hover { color: var(--text-dim); }
 
-.col-filter {
+.col-filter-wrap {
+  position: relative;
+}
+
+.filter-btn {
   width: 100%;
   font-family: 'Outfit', sans-serif;
   font-size: 13px;
@@ -476,24 +480,77 @@ th.num {
   border-radius: 3px;
   padding: 4px 20px 4px 6px;
   background: var(--card);
-  color: var(--text);
+  color: var(--text-dim);
   cursor: pointer;
+  text-align: left;
   appearance: none;
   -webkit-appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%237a705f'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 5px center;
   transition: border-color 0.12s, color 0.12s, background-color 0.25s ease;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-html[data-theme="dark"] .col-filter {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%239290aa'/%3E%3C/svg%3E");
+.filter-btn.has-filter {
+  border-color: var(--gold);
+  color: var(--text);
 }
 
-.col-filter:focus {
+.filter-btn:focus {
   outline: none;
   border-color: var(--gold);
   color: var(--text);
+}
+
+html[data-theme="dark"] .filter-btn {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%239290aa'/%3E%3C/svg%3E");
+}
+
+.filter-dropdown {
+  display: none;
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  min-width: 100%;
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 200;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  padding: 4px 0;
+}
+
+.filter-dropdown.open {
+  display: block;
+}
+
+.filter-option {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 13px;
+  color: var(--text-dim);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.filter-option:hover {
+  background: var(--row-alt-bg);
+  color: var(--text);
+}
+
+.filter-option input[type="checkbox"] {
+  accent-color: var(--gold);
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 /* ── Loading / Error ──────────────────────────────────────────────────────── */
