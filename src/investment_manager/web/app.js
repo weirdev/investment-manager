@@ -2,6 +2,9 @@
 
 const _cache = {};
 let _anonymize = false;
+const THEME_STORAGE_KEY = "investment-manager-theme";
+const LIGHT_THEME = "light";
+const DARK_THEME = "dark";
 
 const CHART_COLORS = [
   "#c9a558", "#8b7cf8", "#40c8a0", "#f4798a",
@@ -25,6 +28,41 @@ function fmtVal(v, col, valueFields, pctFields) {
   if (valueFields.includes(col)) return fmtDollar(v);
   if (pctFields.includes(col)) return fmtPct(v);
   return v == null ? "" : String(v);
+}
+
+// ── Theme helpers ───────────────────────────────────────────────────────────
+
+function getSavedTheme() {
+  try {
+    const theme = window.localStorage.getItem(THEME_STORAGE_KEY);
+    return theme === DARK_THEME || theme === LIGHT_THEME ? theme : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function saveTheme(theme) {
+  try {
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  } catch (_) {}
+}
+
+function getInitialTheme() {
+  return getSavedTheme() || LIGHT_THEME;
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  const toggleEl = document.getElementById("theme-toggle");
+  if (toggleEl) toggleEl.checked = theme === DARK_THEME;
+}
+
+function getThemeColors() {
+  const styles = getComputedStyle(document.documentElement);
+  return {
+    chartTitle: styles.getPropertyValue("--chart-title").trim(),
+    chartText: styles.getPropertyValue("--chart-text").trim(),
+  };
 }
 
 // ── Fetch helper ────────────────────────────────────────────────────────────
@@ -241,6 +279,7 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
 // ── Chart rendering ─────────────────────────────────────────────────────────
 
 function renderDonut(container, labels, values, title) {
+  const themeColors = getThemeColors();
   const el = document.createElement("div");
   el.className = "chart-container";
   container.appendChild(el);
@@ -255,15 +294,16 @@ function renderDonut(container, labels, values, title) {
   }], {
     paper_bgcolor: "transparent",
     plot_bgcolor: "transparent",
-    title: { text: title || "", font: { size: 15, color: "#9a98b5", family: "Outfit, sans-serif" }, y: 0.99, yanchor: "top", yref: "container" },
+    title: { text: title || "", font: { size: 15, color: themeColors.chartTitle, family: "Outfit, sans-serif" }, y: 0.99, yanchor: "top", yref: "container" },
     height: 440,
     margin: { t: 50, b: 80, l: 30, r: 30 },
     showlegend: false,
-    font: { color: "#e2dbd0", family: "Outfit, sans-serif", size: 14 },
+    font: { color: themeColors.chartText, family: "Outfit, sans-serif", size: 14 },
   }, { responsive: true, displayModeBar: false });
 }
 
 function renderTreemap(container, labels, values, title) {
+  const themeColors = getThemeColors();
   const el = document.createElement("div");
   el.className = "chart-container";
   el.style.maxWidth = "720px";
@@ -279,10 +319,10 @@ function renderTreemap(container, labels, values, title) {
   }], {
     paper_bgcolor: "transparent",
     plot_bgcolor: "transparent",
-    title: { text: title || "", font: { size: 15, color: "#9a98b5", family: "Outfit, sans-serif" } },
+    title: { text: title || "", font: { size: 15, color: themeColors.chartTitle, family: "Outfit, sans-serif" } },
     height: 400,
     margin: { t: 30, b: 10, l: 10, r: 10 },
-    font: { color: "#e2dbd0", family: "Outfit, sans-serif", size: 14 },
+    font: { color: themeColors.chartText, family: "Outfit, sans-serif", size: 14 },
   }, { responsive: true, displayModeBar: false });
 }
 
@@ -431,18 +471,28 @@ async function render() {
 
 window.addEventListener("hashchange", render);
 window.addEventListener("DOMContentLoaded", async () => {
-  const toggleEl = document.getElementById("anonymize-toggle");
+  const themeToggleEl = document.getElementById("theme-toggle");
+  const anonymizeToggleEl = document.getElementById("anonymize-toggle");
+
+  applyTheme(getInitialTheme());
 
   try {
     const cfg = await fetch("/api/config").then(r => r.json());
     if (cfg.anonymize_locked) {
       _anonymize = true;
-      toggleEl.checked = true;
-      toggleEl.disabled = true;
+      anonymizeToggleEl.checked = true;
+      anonymizeToggleEl.disabled = true;
     }
   } catch (_) {}
 
-  toggleEl.addEventListener("change", e => {
+  themeToggleEl.addEventListener("change", e => {
+    const theme = e.target.checked ? DARK_THEME : LIGHT_THEME;
+    applyTheme(theme);
+    saveTheme(theme);
+    render();
+  });
+
+  anonymizeToggleEl.addEventListener("change", e => {
     _anonymize = e.target.checked;
     render();
   });

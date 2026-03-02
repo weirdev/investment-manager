@@ -4,6 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Investment Manager</title>
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem("investment-manager-theme");
+        if (theme === "dark" || theme === "light") {
+          document.documentElement.dataset.theme = theme;
+        }
+      } catch (_) {}
+    })();
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Space+Mono&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -54,10 +64,15 @@
       Precious Metals
     </a>
     <div class="sidebar-footer">
-      <label class="anon-toggle" title="Normalize all amounts to ~$100,000">
+      <label class="sidebar-toggle" title="Switch between light and dark themes">
+        <input type="checkbox" id="theme-toggle">
+        <span class="sidebar-switch"></span>
+        <span class="sidebar-toggle-label">Dark mode</span>
+      </label>
+      <label class="sidebar-toggle" title="Normalize all amounts to ~$100,000">
         <input type="checkbox" id="anonymize-toggle">
-        <span class="anon-switch"></span>
-        <span class="anon-label">Anonymize</span>
+        <span class="sidebar-switch"></span>
+        <span class="sidebar-toggle-label">Anonymize</span>
       </label>
     </div>
   </nav>
