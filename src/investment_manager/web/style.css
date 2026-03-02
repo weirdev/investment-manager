@@ -5,9 +5,9 @@
   --card-hover:    #15152a;
   --border:        #1e1e38;
   --border-subtle: #131326;
-  --text:          #e2dbd0;
-  --text-muted:    #9a98b5;
-  --text-dim:      #767392;
+  --text:          #ede9e0;
+  --text-muted:    #b2b0ce;
+  --text-dim:      #9290aa;
   --gold:          #c9a558;
   --gold-bright:   #e0c278;
   --gold-bg:       rgba(201,165,88,0.07);
@@ -21,7 +21,7 @@ body {
   display: flex;
   min-height: 100vh;
   font-family: 'Outfit', system-ui, sans-serif;
-  font-size: 15px;
+  font-size: 16px;
   line-height: 1.5;
   background: var(--bg);
   color: var(--text);
@@ -73,7 +73,7 @@ body {
 }
 
 .brand-name {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-muted);
   letter-spacing: 0.06em;
@@ -84,7 +84,7 @@ body {
 .nav-section-label {
   display: block;
   padding: 0 1.25rem 0.6rem;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -98,7 +98,7 @@ body {
   padding: 0.65rem 1.25rem;
   color: var(--text-muted);
   text-decoration: none;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 500;
   border-left: 2px solid transparent;
   transition: color 0.15s, background 0.15s, border-color 0.15s;
@@ -154,7 +154,7 @@ body {
 #anonymize-toggle:checked ~ .anon-switch::after { transform: translateX(12px); background: var(--gold); }
 #anonymize-toggle { display: none; }
 
-.anon-label { font-size: 12px; color: var(--text-muted); letter-spacing: 0.04em; }
+.anon-label { font-size: 13px; color: var(--text-muted); letter-spacing: 0.04em; }
 #anonymize-toggle:disabled ~ .anon-switch { opacity: 0.6; }
 #anonymize-toggle:disabled ~ .anon-label { opacity: 0.6; }
 .anon-toggle:has(#anonymize-toggle:disabled) { cursor: not-allowed; }
@@ -170,7 +170,7 @@ body {
 
 #view h2 {
   font-family: 'Cormorant Garamond', Georgia, serif;
-  font-size: 2.6rem;
+  font-size: 2.9rem;
   font-weight: 500;
   color: var(--text);
   letter-spacing: -0.02em;
@@ -192,7 +192,7 @@ body {
 }
 
 .page-subtitle {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-dim);
   letter-spacing: 0.09em;
@@ -204,7 +204,7 @@ body {
 .total-value {
   font-family: 'Space Mono', 'Courier New', monospace;
   color: var(--gold);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .placeholder {
@@ -212,7 +212,7 @@ body {
   font-style: italic;
   margin-top: 2rem;
   letter-spacing: 0.03em;
-  font-size: 15px;
+  font-size: 16px;
 }
 
 /* ── Charts ───────────────────────────────────────────────────────────────── */
@@ -250,7 +250,7 @@ body {
 }
 
 .col-picker-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -263,7 +263,7 @@ body {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
   cursor: pointer;
   user-select: none;
@@ -306,7 +306,7 @@ th {
   text-align: left;
   padding: 0.7rem 1rem;
   font-family: 'Outfit', sans-serif;
-  font-size: 11.5px;
+  font-size: 12.5px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -323,7 +323,7 @@ th:hover { color: var(--text-muted); }
 td {
   padding: 0.6rem 1rem;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text);
   white-space: nowrap;
 }
@@ -339,7 +339,7 @@ tbody tr:nth-child(even):hover { background: var(--card-hover); }
 
 tfoot tr td {
   font-family: 'Space Mono', 'Courier New', monospace;
-  font-size: 12.5px;
+  font-size: 13.5px;
   font-weight: 700;
   border-top: 1px solid var(--border);
   border-bottom: none;
@@ -350,7 +350,7 @@ tfoot tr td {
 .sort-arrow {
   margin-left: 3px;
   color: var(--gold);
-  font-size: 9px;
+  font-size: 10px;
 }
 
 /* ── Numeric cells ────────────────────────────────────────────────────────── */
@@ -358,13 +358,13 @@ tfoot tr td {
 .num {
   text-align: right;
   font-family: 'Space Mono', 'Courier New', monospace;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 th.num {
   text-align: right;
   font-family: 'Outfit', sans-serif;
-  font-size: 11.5px;
+  font-size: 12.5px;
 }
 
 /* ── Filter row ───────────────────────────────────────────────────────────── */
@@ -381,7 +381,7 @@ th.num {
 .col-filter {
   width: 100%;
   font-family: 'Outfit', sans-serif;
-  font-size: 12px;
+  font-size: 13px;
   border: 1px solid var(--border);
   border-radius: 3px;
   padding: 4px 20px 4px 6px;
@@ -409,7 +409,7 @@ th.num {
   text-align: center;
   color: var(--text-dim);
   font-family: 'Space Mono', monospace;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
@@ -420,7 +420,7 @@ th.num {
   background: rgba(248,113,113,0.05);
   border: 1px solid rgba(248,113,113,0.15);
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 /* ── Animations ───────────────────────────────────────────────────────────── */
