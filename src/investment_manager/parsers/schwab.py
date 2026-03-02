@@ -89,6 +89,7 @@ class SchwabParser(InstitutionParser):
 
                 account_type = self._registry.validate(INSTITUTION, current_account_number)
                 owner = self._registry.get_owner(INSTITUTION, current_account_number)
+                is_retirement = self._registry.get_is_retirement(INSTITUTION, current_account_number)
                 positions.append(
                     Position(
                         institution_name=INSTITUTION,
@@ -98,6 +99,7 @@ class SchwabParser(InstitutionParser):
                         owner=owner,
                         ticker=symbol,
                         value=value,
+                        is_retirement=is_retirement,
                     )
                 )
 

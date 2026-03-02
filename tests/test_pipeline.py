@@ -55,6 +55,7 @@ class TestRun:
             "account_number",
             "account_type",
             "owner",
+            "is_retirement",
             "ticker",
             "value",
             "canonical_ticker",

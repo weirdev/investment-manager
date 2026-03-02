@@ -22,12 +22,15 @@ class AccountRegistry:
                 if not account_number:
                     continue
                 key = (row["institution_name"].strip(), account_number)
+                is_retirement_raw = row.get("is_retirement", "").strip().lower()
+                is_retirement = is_retirement_raw in ("true", "1", "yes")
                 self._accounts[key] = Account(
                     institution_name=row["institution_name"].strip(),
                     account_name=row["account_name"].strip(),
                     account_number=account_number,
                     account_type=row["account_type"].strip(),
                     owner=row.get("owner", "").strip() or "unknown",
+                    is_retirement=is_retirement,
                 )
 
     def lookup(self, institution_name: str, account_number: str) -> Account | None:
@@ -37,6 +40,11 @@ class AccountRegistry:
         """Return owner from registry, or 'unknown' if not found."""
         account = self.lookup(institution_name, account_number)
         return account.owner if account is not None else "unknown"
+
+    def get_is_retirement(self, institution_name: str, account_number: str) -> bool:
+        """Return is_retirement from registry, or False if account not found."""
+        account = self.lookup(institution_name, account_number)
+        return account.is_retirement if account is not None else False
 
     def validate(self, institution_name: str, account_number: str) -> str:
         """Return account_type from registry, or warn and return 'unknown'."""

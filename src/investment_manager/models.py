@@ -10,6 +10,7 @@ class Position:
     owner: str
     ticker: str
     value: float
+    is_retirement: bool = False
 
 
 @dataclass
@@ -19,3 +20,4 @@ class Account:
     account_number: str
     account_type: str
     owner: str
+    is_retirement: bool = False

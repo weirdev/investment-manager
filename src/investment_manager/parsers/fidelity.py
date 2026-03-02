@@ -71,6 +71,7 @@ class FidelityParser(InstitutionParser):
                 account_name = (row.get("Account Name") or "").strip()
                 account_type = self._registry.validate(INSTITUTION, account_number)
                 owner = self._registry.get_owner(INSTITUTION, account_number)
+                is_retirement = self._registry.get_is_retirement(INSTITUTION, account_number)
 
                 positions.append(
                     Position(
@@ -81,6 +82,7 @@ class FidelityParser(InstitutionParser):
                         owner=owner,
                         ticker=ticker,
                         value=value,
+                        is_retirement=is_retirement,
                     )
                 )
         return positions

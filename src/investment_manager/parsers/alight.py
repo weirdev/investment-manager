@@ -46,6 +46,7 @@ class AlightParser(InstitutionParser):
 
                 account_type = self._registry.validate(INSTITUTION, plan)
                 owner = self._registry.get_owner(INSTITUTION, plan)
+                is_retirement = self._registry.get_is_retirement(INSTITUTION, plan)
 
                 positions.append(
                     Position(
@@ -56,6 +57,7 @@ class AlightParser(InstitutionParser):
                         owner=owner,
                         ticker=fund_name,
                         value=value,
+                        is_retirement=is_retirement,
                     )
                 )
         return positions

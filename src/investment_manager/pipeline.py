@@ -93,6 +93,7 @@ def run(
                 "account_number": pl.Utf8,
                 "account_type": pl.Utf8,
                 "owner": pl.Utf8,
+                "is_retirement": pl.Boolean,
                 "ticker": pl.Utf8,
                 "value": pl.Float64,
                 "canonical_ticker": pl.Utf8,
@@ -111,6 +112,7 @@ def run(
                 "account_number": p.account_number,
                 "account_type": p.account_type,
                 "owner": p.owner,
+                "is_retirement": p.is_retirement,
                 "ticker": p.ticker,
                 "value": p.value,
             }

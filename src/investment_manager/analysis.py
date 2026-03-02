@@ -1,7 +1,7 @@
 import polars as pl
 
 
-def aggregate_positions(df: pl.DataFrame) -> pl.DataFrame:
+def aggregate_positions(df: pl.DataFrame, by_retirement: bool = False) -> pl.DataFrame:
     """Group by ticker; show total value and per-account breakdown."""
     if df.is_empty():
         return df
@@ -12,8 +12,9 @@ def aggregate_positions(df: pl.DataFrame) -> pl.DataFrame:
         .sort("total_value", descending=True)
     )
 
+    acct_col = "is_retirement" if by_retirement else "account_type"
     breakdown = (
-        df.select(["ticker", "institution_name", "account_name", "account_type", "value"])
+        df.select(["ticker", "institution_name", "account_name", acct_col, "value"])
         .sort(["ticker", "institution_name", "account_name"])
     )
 
@@ -23,7 +24,7 @@ def aggregate_positions(df: pl.DataFrame) -> pl.DataFrame:
 
 
 def concentration_breakdown(
-    df: pl.DataFrame, group_by_account_type: bool = True
+    df: pl.DataFrame, group_by_account_type: bool = True, by_retirement: bool = False
 ) -> pl.DataFrame:
     """Group by asset_class, market_segment, region, account_type; show value and % of total."""
     if df.is_empty():
@@ -32,7 +33,9 @@ def concentration_breakdown(
     total = df.select(pl.col("value").sum()).item()
 
     group_cols = ["asset_class", "market_segment", "region"]
-    if group_by_account_type:
+    if by_retirement:
+        group_cols.append("is_retirement")
+    elif group_by_account_type:
         group_cols.append("account_type")
 
     return (
@@ -62,7 +65,7 @@ def owner_breakdown(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def precious_metals_by_account(df: pl.DataFrame) -> pl.DataFrame:
+def precious_metals_by_account(df: pl.DataFrame, by_retirement: bool = False) -> pl.DataFrame:
     """Filter to precious metals positions; group by account and ticker."""
     metals = df.filter(pl.col("asset_class") == "precious_metals")
     if metals.is_empty():
@@ -70,8 +73,9 @@ def precious_metals_by_account(df: pl.DataFrame) -> pl.DataFrame:
 
     total = df.select(pl.col("value").sum()).item()
 
+    acct_col = "is_retirement" if by_retirement else "account_type"
     return (
-        metals.group_by(["institution_name", "account_name", "account_type", "ticker"])
+        metals.group_by(["institution_name", "account_name", acct_col, "ticker"])
         .agg(pl.col("value").sum())
         .with_columns(
             (pl.col("value") / total * 100).round(2).alias("pct_of_portfolio")
@@ -80,15 +84,16 @@ def precious_metals_by_account(df: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def allocation_breakdown(df: pl.DataFrame) -> pl.DataFrame:
+def allocation_breakdown(df: pl.DataFrame, by_retirement: bool = False) -> pl.DataFrame:
     """Group by account_type and institution_name; show value and % of total."""
     if df.is_empty():
         return df
 
     total = df.select(pl.col("value").sum()).item()
 
+    acct_col = "is_retirement" if by_retirement else "account_type"
     result = (
-        df.group_by(["account_type", "institution_name"])
+        df.group_by([acct_col, "institution_name"])
         .agg(pl.col("value").sum().alias("total_value"))
         .with_columns(
             (pl.col("total_value") / total * 100).round(2).alias("pct_of_portfolio")

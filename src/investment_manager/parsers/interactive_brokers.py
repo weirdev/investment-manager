@@ -65,6 +65,7 @@ class InteractiveBrokersParser(InstitutionParser):
                 account_name = data.get("AccountAlias", "").strip()
                 account_type = self._registry.validate(INSTITUTION, account_id)
                 owner = self._registry.get_owner(INSTITUTION, account_id)
+                is_retirement = self._registry.get_is_retirement(INSTITUTION, account_id)
 
                 positions.append(
                     Position(
@@ -75,6 +76,7 @@ class InteractiveBrokersParser(InstitutionParser):
                         owner=owner,
                         ticker=symbol,
                         value=value,
+                        is_retirement=is_retirement,
                     )
                 )
 

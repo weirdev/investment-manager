@@ -2,8 +2,10 @@
 
 const _cache = {};
 let _anonymize = false;
+let _byRetirement = false;
 const THEME_STORAGE_KEY = "investment-manager-theme";
 const ANONYMIZE_STORAGE_KEY = "investment-manager-anonymize";
+const BY_RETIREMENT_STORAGE_KEY = "investment-manager-by-retirement";
 const LIGHT_THEME = "light";
 const DARK_THEME = "dark";
 
@@ -63,6 +65,21 @@ function saveAnonymize(enabled) {
   } catch (_) {}
 }
 
+function getSavedByRetirement() {
+  try {
+    const value = window.localStorage.getItem(BY_RETIREMENT_STORAGE_KEY);
+    if (value === "true") return true;
+    if (value === "false") return false;
+  } catch (_) {}
+  return null;
+}
+
+function saveByRetirement(enabled) {
+  try {
+    window.localStorage.setItem(BY_RETIREMENT_STORAGE_KEY, String(Boolean(enabled)));
+  } catch (_) {}
+}
+
 function getInitialTheme() {
   return getSavedTheme() || LIGHT_THEME;
 }
@@ -83,8 +100,16 @@ function getThemeColors() {
 
 // ── Fetch helper ────────────────────────────────────────────────────────────
 
+function _buildUrl(path) {
+  const params = new URLSearchParams();
+  if (_anonymize) params.set("anonymize", "true");
+  if (_byRetirement) params.set("by_retirement", "true");
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
+}
+
 async function fetchData(path) {
-  const url = _anonymize ? path + "?anonymize=true" : path;
+  const url = _buildUrl(path);
   if (_cache[url]) return _cache[url];
   const res = await fetch(url);
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${url}`);
@@ -305,6 +330,7 @@ function renderDonut(container, labels, values, title) {
     labels,
     values,
     textinfo: "label+percent",
+    insidetextorientation: "horizontal",
     hovertemplate: "<b>%{label}</b><br>$%{value:,.2f}<br>%{percent}<extra></extra>",
     marker: { colors: labels.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]) },
   }], {
@@ -356,7 +382,9 @@ function showPositions(view, data) {
   const values = Object.values(tickerMap);
   renderTreemap(view, labels, values, "Portfolio by Ticker");
 
-  const cols = ["ticker", "institution_name", "account_name", "account_type", "value"];
+  const hasCols = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
+  const acctCol = hasCols.includes("is_retirement") ? "is_retirement" : "account_type";
+  const cols = ["ticker", "institution_name", "account_name", acctCol, "value"];
   const tableEl = document.createElement("div");
   view.appendChild(tableEl);
   renderTable(tableEl, cols, data.rows, {
@@ -376,7 +404,8 @@ function showConcentration(view, data) {
   renderDonut(view, Object.keys(classMap), Object.values(classMap), "By Asset Class");
 
   const hasCols = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
-  const cols = ["asset_class", "market_segment", "region", ...(hasCols.includes("account_type") ? ["account_type"] : []), "value", "pct_of_portfolio"];
+  const acctCols = hasCols.includes("is_retirement") ? ["is_retirement"] : hasCols.includes("account_type") ? ["account_type"] : [];
+  const cols = ["asset_class", "market_segment", "region", ...acctCols, "value", "pct_of_portfolio"];
   const tableEl = document.createElement("div");
   view.appendChild(tableEl);
   renderTable(tableEl, cols, data.rows, {
@@ -397,7 +426,8 @@ function showDecomposition(view, data) {
   renderDonut(view, Object.keys(classMap), Object.values(classMap), "By Asset Class (Look-through)");
 
   const hasCols = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
-  const cols = ["asset_class", "market_segment", "region", ...(hasCols.includes("account_type") ? ["account_type"] : []), "value", "pct_of_portfolio"];
+  const acctCols = hasCols.includes("is_retirement") ? ["is_retirement"] : hasCols.includes("account_type") ? ["account_type"] : [];
+  const cols = ["asset_class", "market_segment", "region", ...acctCols, "value", "pct_of_portfolio"];
   const tableEl = document.createElement("div");
   view.appendChild(tableEl);
   renderTable(tableEl, cols, data.rows, {
@@ -411,17 +441,25 @@ function showDecomposition(view, data) {
 function showAllocations(view, data) {
   view.innerHTML = `<h2>Allocations</h2><p class="page-subtitle">By account type &middot; <span class="total-value">${fmtDollar(data.total)}</span> total</p>`;
 
+  const hasCols = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
+  const acctCol = hasCols.includes("is_retirement") ? "is_retirement" : "account_type";
+
+  const labelFor = acctCol === "is_retirement"
+    ? v => (v === true || v === "true") ? "Retirement" : "Non-Retirement"
+    : v => String(v);
+
   const typeMap = {};
   for (const r of data.rows) {
-    typeMap[r.account_type] = (typeMap[r.account_type] || 0) + r.total_value;
+    const key = labelFor(r[acctCol]);
+    typeMap[key] = (typeMap[key] || 0) + r.total_value;
   }
   renderDonut(view, Object.keys(typeMap), Object.values(typeMap), "By Account Type");
 
-  const cols = ["account_type", "institution_name", "total_value", "pct_of_portfolio"];
+  const cols = [acctCol, "institution_name", "total_value", "pct_of_portfolio"];
   const tableEl = document.createElement("div");
   view.appendChild(tableEl);
   renderTable(tableEl, cols, data.rows, {
-    totals: { account_type: "TOTAL", total_value: data.total },
+    totals: { [acctCol]: "TOTAL", total_value: data.total },
     valueFields: ["total_value"],
     pctFields: ["pct_of_portfolio"],
     total: data.total,
@@ -431,7 +469,9 @@ function showAllocations(view, data) {
 function showPreciousMetals(view, data) {
   view.innerHTML = `<h2>Precious Metals</h2><p class="page-subtitle">Physical &amp; ETF holdings &middot; <span class="total-value">${fmtDollar(data.metals_total)}</span> metals</p>`;
 
-  const cols = ["institution_name", "account_name", "account_type", "ticker", "value", "pct_of_portfolio"];
+  const hasCols = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
+  const acctCol = hasCols.includes("is_retirement") ? "is_retirement" : "account_type";
+  const cols = ["institution_name", "account_name", acctCol, "ticker", "value", "pct_of_portfolio"];
   const totals = {
     institution_name: "Metals total",
     value: data.metals_total,
@@ -489,11 +529,15 @@ window.addEventListener("hashchange", render);
 window.addEventListener("DOMContentLoaded", async () => {
   const themeToggleEl = document.getElementById("theme-toggle");
   const anonymizeToggleEl = document.getElementById("anonymize-toggle");
+  const retirementToggleEl = document.getElementById("retirement-toggle");
   const savedAnonymize = getSavedAnonymize();
+  const savedByRetirement = getSavedByRetirement();
 
   applyTheme(getInitialTheme());
   if (savedAnonymize !== null) anonymizeToggleEl.checked = savedAnonymize;
   _anonymize = anonymizeToggleEl.checked;
+  if (savedByRetirement !== null) retirementToggleEl.checked = savedByRetirement;
+  _byRetirement = retirementToggleEl.checked;
 
   try {
     const cfg = await fetch("/api/config").then(r => r.json());
@@ -515,6 +559,12 @@ window.addEventListener("DOMContentLoaded", async () => {
   anonymizeToggleEl.addEventListener("change", e => {
     _anonymize = e.target.checked;
     saveAnonymize(_anonymize);
+    render();
+  });
+
+  retirementToggleEl.addEventListener("change", e => {
+    _byRetirement = e.target.checked;
+    saveByRetirement(_byRetirement);
     render();
   });
 

@@ -48,6 +48,10 @@ _AnonymizeOption = Annotated[
     bool, typer.Option("--anonymize", help="Normalize amounts to ~$100,000 total")
 ]
 
+_ByRetirementOption = Annotated[
+    bool, typer.Option("--by-retirement", help="Group by retirement status instead of account type")
+]
+
 
 def _resolve_data_dir(data_dir: Optional[Path]) -> Path:
     from .paths import DEFAULT_DATA_DIR
@@ -55,7 +59,11 @@ def _resolve_data_dir(data_dir: Optional[Path]) -> Path:
 
 
 @app.command()
-def positions(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
+def positions(
+    data_dir: _DataDirOption = None,
+    anonymize: _AnonymizeOption = False,
+    by_retirement: _ByRetirementOption = False,
+) -> None:
     """Print the aggregate position view grouped by ticker."""
     resolved = _resolve_data_dir(data_dir)
     df = pipeline.run(data_dir=resolved, anonymize=anonymize)
@@ -63,14 +71,18 @@ def positions(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = Fal
         typer.echo("No positions found.")
         raise typer.Exit(1)
 
-    agg = analysis.aggregate_positions(df)
+    agg = analysis.aggregate_positions(df, by_retirement=by_retirement)
     with pl_options():
         _safe_echo(str(agg))
     _safe_echo(_total_line(df))
 
 
 @app.command()
-def concentration(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
+def concentration(
+    data_dir: _DataDirOption = None,
+    anonymize: _AnonymizeOption = False,
+    by_retirement: _ByRetirementOption = False,
+) -> None:
     """Print portfolio concentration by asset class, market segment, region, and account type."""
     resolved = _resolve_data_dir(data_dir)
     df = pipeline.run(data_dir=resolved, anonymize=anonymize)
@@ -78,7 +90,7 @@ def concentration(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption =
         typer.echo("No positions found.")
         raise typer.Exit(1)
 
-    breakdown = analysis.concentration_breakdown(df)
+    breakdown = analysis.concentration_breakdown(df, by_retirement=by_retirement)
     with pl_options():
         _safe_echo(str(breakdown))
     _safe_echo(_total_line(df))
@@ -92,6 +104,7 @@ def decomposition(
         typer.Option("--no-account-type", help="Collapse across account types."),
     ] = False,
     anonymize: _AnonymizeOption = False,
+    by_retirement: _ByRetirementOption = False,
 ) -> None:
     """Print look-through concentration with composite funds split into components."""
     resolved = _resolve_data_dir(data_dir)
@@ -102,7 +115,9 @@ def decomposition(
 
     compositions = decomp.load_fund_compositions()
     decomposed = decomp.decompose(df, compositions)
-    breakdown = analysis.concentration_breakdown(decomposed, group_by_account_type=not no_account_type)
+    breakdown = analysis.concentration_breakdown(
+        decomposed, group_by_account_type=not no_account_type, by_retirement=by_retirement
+    )
     with pl_options():
         _safe_echo(str(breakdown))
     _safe_echo(_total_line(df))
@@ -124,7 +139,11 @@ def owners(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False)
 
 
 @app.command()
-def precious_metals(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
+def precious_metals(
+    data_dir: _DataDirOption = None,
+    anonymize: _AnonymizeOption = False,
+    by_retirement: _ByRetirementOption = False,
+) -> None:
     """Print precious metals holdings by account."""
     resolved = _resolve_data_dir(data_dir)
     df = pipeline.run(data_dir=resolved, anonymize=anonymize)
@@ -132,7 +151,7 @@ def precious_metals(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption
         typer.echo("No positions found.")
         raise typer.Exit(1)
 
-    breakdown = analysis.precious_metals_by_account(df)
+    breakdown = analysis.precious_metals_by_account(df, by_retirement=by_retirement)
     if breakdown.is_empty():
         typer.echo("No precious metals positions found.")
         raise typer.Exit(1)
@@ -145,7 +164,11 @@ def precious_metals(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption
 
 
 @app.command()
-def allocations(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
+def allocations(
+    data_dir: _DataDirOption = None,
+    anonymize: _AnonymizeOption = False,
+    by_retirement: _ByRetirementOption = False,
+) -> None:
     """Print the allocation breakdown by account type and institution."""
     resolved = _resolve_data_dir(data_dir)
     df = pipeline.run(data_dir=resolved, anonymize=anonymize)
@@ -153,7 +176,7 @@ def allocations(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = F
         typer.echo("No positions found.")
         raise typer.Exit(1)
 
-    breakdown = analysis.allocation_breakdown(df)
+    breakdown = analysis.allocation_breakdown(df, by_retirement=by_retirement)
     with pl_options():
         _safe_echo(str(breakdown))
     _safe_echo(_total_line(df))
