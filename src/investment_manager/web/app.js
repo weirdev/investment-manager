@@ -179,16 +179,32 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
     if (totals && anyFilter) {
       displayTotals = {};
       for (const [k, v] of Object.entries(totals)) {
-        if (valueFields.includes(k) || pctFields.includes(k)) {
+        if (valueFields.includes(k)) {
           displayTotals[k] = baseRows.reduce((s, r) => s + (r[k] ?? 0), 0);
+        } else if (pctFields.includes(k)) {
+          displayTotals[k] = 100;
         } else {
           displayTotals[k] = "Filtered Total";
         }
       }
     }
 
+    let displayRows = baseRows;
+    if (anyFilter && pctFields.length > 0 && valueFields.length > 0) {
+      const filteredSum = baseRows.reduce((s, r) => s + (r[valueFields[0]] ?? 0), 0);
+      if (filteredSum > 0) {
+        displayRows = baseRows.map(r => {
+          const copy = { ...r };
+          for (const pf of pctFields) {
+            copy[pf] = (r[valueFields[0]] ?? 0) / filteredSum * 100;
+          }
+          return copy;
+        });
+      }
+    }
+
     const sorted = sortCol && visibleCols.has(sortCol)
-      ? [...baseRows].sort((a, b) => {
+      ? [...displayRows].sort((a, b) => {
           const av = a[sortCol], bv = b[sortCol];
           if (av == null && bv == null) return 0;
           if (av == null) return sortDir;
@@ -197,7 +213,7 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
             ? (av - bv) * sortDir
             : String(av).localeCompare(String(bv)) * sortDir;
         })
-      : [...baseRows];
+      : [...displayRows];
 
     container.innerHTML = "";
 
@@ -239,7 +255,10 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
       const th = document.createElement("th");
       const isNum = valueFields.includes(col) || pctFields.includes(col);
       if (isNum) th.classList.add("num");
-      th.innerHTML = col.replace(/_/g, " ");
+      const colLabel = (anyFilter && pctFields.includes(col))
+        ? "Pct of Filtered"
+        : col.replace(/_/g, " ");
+      th.innerHTML = colLabel;
       if (sortCol === col) {
         th.innerHTML += `<span class="sort-arrow">${sortDir === 1 ? "▲" : "▼"}</span>`;
       }
