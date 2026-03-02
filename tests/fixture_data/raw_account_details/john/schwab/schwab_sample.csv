@@ -1,0 +1,15 @@
+"Positions for CUSTACCS as of 09:00 AM ET, 01/01/2025"
+
+Test Brokerage ...001
+"Symbol","Description","Qty (Quantity)","Price","Price Chng $ (Price Change $)","Price Chng % (Price Change %)","Mkt Val (Market Value)","Day Chng % (Day Change %)","Day Chng $ (Day Change $)","Cost Basis","Gain $ (Gain/Loss $)","Gain % (Gain/Loss %)","Ratings","Reinvest?","Reinvest Capital Gains?","% of Acct (% of Account)","Security Type",
+"SCHB","SCHWAB U.S. BROAD MARKET ETF","37.7573","26.49","-0.13","-0.49%","$1,000.00","-0.49%","-$4.91","$800.00","$200.00","25%","--","Yes","N/A","25%","ETFs & Closed End Funds",
+"SPY","STATE STREET SPDR S&P 500 TRUST ETF","4.3751","685.99","-3.31","-0.48%","$3,000.00","-0.48%","-$14.47","$2,500.00","$500.00","20%","--","Yes","N/A","75%","ETFs & Closed End Funds",
+"Cash & Cash Investments","--","--","--","--","--","$10.00","0%","$0.00","--","--","--","--","--","--","0%","Cash and Money Market",
+"Account Total","","--","--","--","--","$4,010.00","--","--","$3,300.00","$700.00","21.21%","--","--","--","--","--",
+
+
+Test IRA ...002
+"Symbol","Description","Qty (Quantity)","Price","Price Chng $ (Price Change $)","Price Chng % (Price Change %)","Mkt Val (Market Value)","Day Chng % (Day Change %)","Day Chng $ (Day Change $)","Cost Basis","Gain $ (Gain/Loss $)","Gain % (Gain/Loss %)","Ratings","Reinvest?","Reinvest Capital Gains?","% of Acct (% of Account)","Security Type",
+"VTI","VANGUARD TOTAL STOCK MARKET INDEX FUND ETF SHARES","5.9046","338.77","-1.72","-0.51%","$2,000.00","-0.51%","-$10.15","$1,500.00","$500.00","33.33%","--","Yes","N/A","100%","ETFs & Closed End Funds",
+"Cash & Cash Investments","--","--","--","--","--","$0.00","0%","$0.00","--","--","--","--","--","--","-","Cash and Money Market",
+"Account Total","","--","--","--","--","$2,000.00","--","--","$1,500.00","$500.00","33.33%","--","--","--","--","--",

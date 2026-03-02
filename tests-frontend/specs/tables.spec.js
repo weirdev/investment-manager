@@ -22,6 +22,12 @@ test("multi-select filters update rows, labels, and totals", async ({ page }) =>
   await gotoRoute(page, "/concentration");
   const initialRows = await page.locator("tbody tr").count();
   const initialFooter = await page.locator("tfoot td").first().innerText();
+  await page.locator(".filter-row th").first().locator(".filter-btn").click();
+  const assetClassOptions = await page.locator(".filter-row th").first().locator(".filter-option").allInnerTexts();
+  await page.locator("body").click({ position: { x: 5, y: 5 } });
+  const secondOption = assetClassOptions
+    .map(text => text.trim())
+    .find(text => text && text !== "equities");
 
   await setFilterOptions(page, "asset class", ["equities"]);
   await expect(page.locator(".filter-btn.has-filter").first()).toContainText("equities");
@@ -30,8 +36,10 @@ test("multi-select filters update rows, labels, and totals", async ({ page }) =>
   await expect(page.locator("tfoot td").first()).toHaveText("Filtered Total");
   expect(initialFooter).not.toBe("Filtered Total");
 
-  await setFilterOptions(page, "asset class", ["equities", "unknown"]);
-  await expect(page.locator(".filter-btn.has-filter").first()).toContainText("2 selected");
+  if (secondOption) {
+    await setFilterOptions(page, "asset class", ["equities", secondOption]);
+    await expect(page.locator(".filter-btn.has-filter").first()).toContainText("2 selected");
+  }
 
   await setFilterOptions(page, "asset class", []);
   await expect(page.locator(".filter-btn").first()).toHaveText("All");

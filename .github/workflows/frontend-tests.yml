@@ -7,6 +7,27 @@ on:
       - main
 
 jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.14"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: astral-sh/setup-uv@v4
+
+      - name: Install Python dependencies
+        run: uv sync
+
+      - name: Run Python tests
+        run: uv run pytest tests -q
+
   frontend-tests:
     runs-on: ubuntu-latest
 
@@ -15,7 +36,7 @@ jobs:
 
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.14"
+          python-version: "3.11"
 
       - uses: astral-sh/setup-uv@v4
 

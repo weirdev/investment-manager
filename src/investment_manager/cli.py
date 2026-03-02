@@ -8,6 +8,7 @@ import typer
 
 from . import analysis, pipeline
 from . import decomposition as decomp
+from .paths import DEFAULT_DATA_PATHS, DataPaths
 
 
 def _total_line(df: pl.DataFrame) -> str:
@@ -53,9 +54,8 @@ _ByRetirementOption = Annotated[
 ]
 
 
-def _resolve_data_dir(data_dir: Optional[Path]) -> Path:
-    from .paths import DEFAULT_DATA_DIR
-    return data_dir if data_dir is not None else DEFAULT_DATA_DIR
+def _resolve_data_paths(data_dir: Optional[Path]) -> DataPaths:
+    return DataPaths.from_data_dir(data_dir) if data_dir is not None else DEFAULT_DATA_PATHS
 
 
 @app.command()
@@ -65,8 +65,8 @@ def positions(
     by_retirement: _ByRetirementOption = False,
 ) -> None:
     """Print the aggregate position view grouped by ticker."""
-    resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
+    resolved = _resolve_data_paths(data_dir)
+    df = pipeline.run(data_paths=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -84,8 +84,8 @@ def concentration(
     by_retirement: _ByRetirementOption = False,
 ) -> None:
     """Print portfolio concentration by asset class, market segment, region, and account type."""
-    resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
+    resolved = _resolve_data_paths(data_dir)
+    df = pipeline.run(data_paths=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -107,13 +107,13 @@ def decomposition(
     by_retirement: _ByRetirementOption = False,
 ) -> None:
     """Print look-through concentration with composite funds split into components."""
-    resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
+    resolved = _resolve_data_paths(data_dir)
+    df = pipeline.run(data_paths=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
 
-    compositions = decomp.load_fund_compositions()
+    compositions = decomp.load_fund_compositions(resolved.compositions_path)
     decomposed = decomp.decompose(df, compositions)
     breakdown = analysis.concentration_breakdown(
         decomposed, group_by_account_type=not no_account_type, by_retirement=by_retirement
@@ -126,8 +126,8 @@ def decomposition(
 @app.command()
 def owners(data_dir: _DataDirOption = None, anonymize: _AnonymizeOption = False) -> None:
     """Print the owner breakdown by portfolio share."""
-    resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
+    resolved = _resolve_data_paths(data_dir)
+    df = pipeline.run(data_paths=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -145,8 +145,8 @@ def precious_metals(
     by_retirement: _ByRetirementOption = False,
 ) -> None:
     """Print precious metals holdings by account."""
-    resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
+    resolved = _resolve_data_paths(data_dir)
+    df = pipeline.run(data_paths=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -170,8 +170,8 @@ def allocations(
     by_retirement: _ByRetirementOption = False,
 ) -> None:
     """Print the allocation breakdown by account type and institution."""
-    resolved = _resolve_data_dir(data_dir)
-    df = pipeline.run(data_dir=resolved, anonymize=anonymize)
+    resolved = _resolve_data_paths(data_dir)
+    df = pipeline.run(data_paths=resolved, anonymize=anonymize)
     if df.is_empty():
         typer.echo("No positions found.")
         raise typer.Exit(1)
@@ -194,9 +194,9 @@ def serve(
 
     from .server import create_app
 
-    resolved = _resolve_data_dir(data_dir)
+    resolved = _resolve_data_paths(data_dir)
     typer.echo(f"Starting server at http://{host}:{port}")
-    uvicorn.run(create_app(data_dir=resolved, anonymize=anonymize), host=host, port=port)
+    uvicorn.run(create_app(data_paths=resolved, anonymize=anonymize), host=host, port=port)
 
 
 class pl_options:

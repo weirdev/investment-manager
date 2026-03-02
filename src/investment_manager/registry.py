@@ -3,12 +3,16 @@ import warnings
 from pathlib import Path
 
 from .models import Account
-from .paths import DEFAULT_ACCOUNTS_PATH
+from .paths import DEFAULT_ACCOUNTS_PATH, DataPaths
 
 
 class AccountRegistry:
-    def __init__(self, path: Path = DEFAULT_ACCOUNTS_PATH) -> None:
+    def __init__(self, path: Path | None = None, *, data_paths: DataPaths | None = None) -> None:
         self._accounts: dict[tuple[str, str], Account] = {}
+        if data_paths is not None:
+            path = data_paths.accounts_path
+        if path is None:
+            path = DEFAULT_ACCOUNTS_PATH
         if path.exists():
             self._load(path)
 

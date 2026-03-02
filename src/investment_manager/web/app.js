@@ -3,6 +3,7 @@
 const _cache = {};
 let _anonymize = false;
 let _byRetirement = false;
+let _activeFilterMenu = null;
 const THEME_STORAGE_KEY = "investment-manager-theme";
 const ANONYMIZE_STORAGE_KEY = "investment-manager-anonymize";
 const BY_RETIREMENT_STORAGE_KEY = "investment-manager-by-retirement";
@@ -14,6 +15,19 @@ const CHART_COLORS = [
   "#5b9cf6", "#e8874f", "#9ed464", "#f0c040",
   "#a78bfa", "#fb7185",
 ];
+
+function closeActiveFilterMenu() {
+  if (!_activeFilterMenu) return;
+  _activeFilterMenu.dropdown.classList.remove("open");
+  _activeFilterMenu.onClose();
+  _activeFilterMenu = null;
+}
+
+document.addEventListener("click", event => {
+  if (!_activeFilterMenu) return;
+  if (_activeFilterMenu.wrapper.contains(event.target)) return;
+  closeActiveFilterMenu();
+});
 
 // ── Formatters ─────────────────────────────────────────────────────────────
 
@@ -171,6 +185,10 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
   }
 
   function render() {
+    if (_activeFilterMenu && container.contains(_activeFilterMenu.wrapper)) {
+      closeActiveFilterMenu();
+    }
+
     const visCols = columns.filter(c => visibleCols.has(c));
     const baseRows = computeRows();
 
@@ -329,11 +347,20 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
 
       btn.addEventListener("click", e => {
         e.stopPropagation();
-        container.querySelectorAll(".filter-dropdown.open").forEach(d => {
-          if (d !== dropdown) d.classList.remove("open");
-        });
-        const isOpen = dropdown.classList.toggle("open");
-        openFilterCol = isOpen ? col : null;
+        if (_activeFilterMenu?.dropdown === dropdown) {
+          closeActiveFilterMenu();
+          return;
+        }
+        closeActiveFilterMenu();
+        dropdown.classList.add("open");
+        openFilterCol = col;
+        _activeFilterMenu = {
+          wrapper: wrap,
+          dropdown,
+          onClose: () => {
+            openFilterCol = null;
+          },
+        };
       });
 
       wrap.appendChild(btn);
@@ -384,17 +411,20 @@ function renderTable(container, columns, rows, { totals = null, valueFields = []
 
     if (openFilterCol !== null) {
       const openBtn = container.querySelector(`.filter-btn[data-col="${CSS.escape(openFilterCol)}"]`);
-      openBtn?.nextElementSibling?.classList.add("open");
+      const openDropdown = openBtn?.nextElementSibling;
+      const openWrap = openBtn?.parentElement;
+      if (openDropdown && openWrap) {
+        openDropdown.classList.add("open");
+        _activeFilterMenu = {
+          wrapper: openWrap,
+          dropdown: openDropdown,
+          onClose: () => {
+            openFilterCol = null;
+          },
+        };
+      }
     }
   }
-
-  document.addEventListener("click", () => {
-    if (openFilterCol !== null) {
-      openFilterCol = null;
-      container.querySelectorAll(".filter-dropdown.open")
-        .forEach(d => d.classList.remove("open"));
-    }
-  });
 
   render();
 }
@@ -556,15 +586,6 @@ function showPreciousMetals(view, data) {
   const hasCols = data.rows.length > 0 ? Object.keys(data.rows[0]) : [];
   const acctCol = hasCols.includes("is_retirement") ? "is_retirement" : "account_type";
   const cols = ["institution_name", "account_name", acctCol, "ticker", "value", "pct_of_portfolio"];
-  const totals = {
-    institution_name: "Metals total",
-    value: data.metals_total,
-  };
-  const footerRows = [totals];
-  if (data.metals_total !== data.total) {
-    footerRows.push({ institution_name: "Portfolio total", value: data.total });
-  }
-
   const tableEl = document.createElement("div");
   view.appendChild(tableEl);
 

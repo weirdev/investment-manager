@@ -1,0 +1,13 @@
+canonical_ticker,asset_class,security_type,market_segment,region
+AAPL,equities,stock,large_cap,us
+MSFT,equities,stock,large_cap,us
+SPAXX,cash,money_market,cash,us
+VOO,equities,etf,large_cap,us
+SCHB,equities,etf,total_market,us
+SPY,equities,etf,large_cap,us
+VTI,equities,etf,total_market,us
+GLD,precious_metals,etf,gold,global
+VB,equities,etf,small_cap,us
+Vanguard Target Retirement 2060,equities,mutual_fund,target_date,global
+Vanguard Target Retirement 2055,equities,mutual_fund,target_date,global
+Vanguard Total Bond,fixed_income,mutual_fund,total_market,us

@@ -1,13 +1,9 @@
-"""Integration tests: run the real pipeline against tests/fixtures/ with no mocking."""
-from pathlib import Path
-
+"""Integration tests: run the real pipeline against hermetic fixture data with no mocking."""
 import pytest
 
 from investment_manager import analysis, pipeline
 from investment_manager import decomposition as decomp
-from investment_manager.registry import AccountRegistry
-
-FIXTURES_DIR = Path(__file__).parent / "fixtures"
+from .conftest import TEST_DATA_PATHS
 
 _EXPECTED_COLUMNS = {
     "institution_name",
@@ -23,17 +19,9 @@ _EXPECTED_COLUMNS = {
     "market_segment",
     "region",
 }
-
-
-def _empty_registry() -> AccountRegistry:
-    reg = AccountRegistry.__new__(AccountRegistry)
-    reg._accounts = {}
-    return reg
-
-
 @pytest.fixture(scope="module")
 def positions_df():
-    return pipeline.run(data_dir=FIXTURES_DIR, registry=_empty_registry())
+    return pipeline.run(data_paths=TEST_DATA_PATHS)
 
 
 class TestPipelineIntegration:
@@ -65,14 +53,14 @@ class TestAnalysisIntegration:
 
 class TestDecompositionIntegration:
     def test_decompose_concentration_percentages_sum_to_100(self, positions_df):
-        compositions = decomp.load_fund_compositions()
+        compositions = decomp.load_fund_compositions(TEST_DATA_PATHS.compositions_path)
         decomposed = decomp.decompose(positions_df, compositions)
         result = analysis.concentration_breakdown(decomposed)
         total_pct = result["pct_of_portfolio"].sum()
         assert abs(total_pct - 100.0) < 0.1
 
     def test_total_value_preserved_after_decomposition(self, positions_df):
-        compositions = decomp.load_fund_compositions()
+        compositions = decomp.load_fund_compositions(TEST_DATA_PATHS.compositions_path)
         decomposed = decomp.decompose(positions_df, compositions)
         original_total = positions_df["value"].sum()
         decomposed_total = decomposed["value"].sum()

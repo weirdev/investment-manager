@@ -1,0 +1,10 @@
+canonical_ticker,asset_class,market_segment,region,fraction
+VTI,equities,large_cap,us,0.72
+VTI,equities,mid_cap,us,0.18
+VTI,equities,small_cap,us,0.10
+Vanguard Target Retirement 2060,equities,total_market,us,0.54
+Vanguard Target Retirement 2060,equities,total_market,ex_us,0.36
+Vanguard Target Retirement 2060,fixed_income,total_market,us,0.10
+Vanguard Target Retirement 2055,equities,total_market,us,0.50
+Vanguard Target Retirement 2055,equities,total_market,ex_us,0.35
+Vanguard Target Retirement 2055,fixed_income,total_market,us,0.15

@@ -12,33 +12,13 @@ from .parsers.fidelity import FidelityParser
 from .parsers.interactive_brokers import InteractiveBrokersParser
 from .parsers.schwab import SchwabParser
 from .paths import DEFAULT_DATA_DIR as _DEFAULT_DATA_DIR
-from .paths import PERSONAL_DATA_DIR as _DEFAULT_PERSONAL_DATA_DIR
+from .paths import DEFAULT_DATA_PATHS, DataPaths
 from .registry import AccountRegistry
 
 logger = logging.getLogger(__name__)
 
 # All known parsers — add new ones here
 _PARSERS: list[type[InstitutionParser]] = [FidelityParser, SchwabParser, InteractiveBrokersParser, AlightParser]
-
-
-def _discover_mapping_paths(data_dir: Path) -> list[Path]:
-    """Find *-asset-mapping.csv files for each institution subdir that has position CSVs."""
-    paths: list[Path] = []
-    if not data_dir.exists():
-        return paths
-    seen_institutions: set[str] = set()
-    for owner_dir in sorted(data_dir.iterdir()):
-        if not owner_dir.is_dir():
-            continue
-        for institution_dir in sorted(owner_dir.iterdir()):
-            if not institution_dir.is_dir() or not any(institution_dir.glob("*.csv")):
-                continue
-            if institution_dir.name in seen_institutions:
-                continue
-            seen_institutions.add(institution_dir.name)
-            mapping_dir = _DEFAULT_PERSONAL_DATA_DIR / institution_dir.name
-            paths.extend(sorted(mapping_dir.glob("*-asset-mapping.csv")))
-    return paths
 
 
 def _get_parser(file_path: Path, registry: AccountRegistry) -> InstitutionParser | None:
@@ -50,17 +30,21 @@ def _get_parser(file_path: Path, registry: AccountRegistry) -> InstitutionParser
 
 def run(
     data_dir: Path = _DEFAULT_DATA_DIR,
+    data_paths: DataPaths | None = None,
     registry: AccountRegistry | None = None,
     anonymize: bool = False,
 ) -> pl.DataFrame:
     """Discover CSVs, parse each, validate, and return a merged DataFrame."""
-    if registry is None:
-        registry = AccountRegistry()
+    if data_paths is None:
+        data_paths = DataPaths.from_data_dir(data_dir) if data_dir != _DEFAULT_DATA_DIR else DEFAULT_DATA_PATHS
 
-    csv_files = list(data_dir.rglob("*.csv"))
-    logger.info("Discovered %d CSV file(s) in %s", len(csv_files), data_dir)
+    if registry is None:
+        registry = AccountRegistry(data_paths=data_paths)
+
+    csv_files = list(data_paths.raw_account_details_dir.rglob("*.csv"))
+    logger.info("Discovered %d CSV file(s) in %s", len(csv_files), data_paths.raw_account_details_dir)
     if not csv_files:
-        warnings.warn(f"No CSV files found in {data_dir}", stacklevel=2)
+        warnings.warn(f"No CSV files found in {data_paths.raw_account_details_dir}", stacklevel=2)
 
     all_positions: list[Position] = []
     for csv_file in csv_files:
@@ -119,8 +103,8 @@ def run(
             for p in all_positions
         ]
     )
-    mapping_paths = _discover_mapping_paths(data_dir)
-    df = enrich(df, load_asset_mapping(mapping_paths), load_asset_metadata())
+    mapping_paths = data_paths.discover_mapping_paths()
+    df = enrich(df, load_asset_mapping(mapping_paths), load_asset_metadata(data_paths.metadata_path))
     if anonymize:
         total = df["value"].sum()
         if total > 0:

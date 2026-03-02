@@ -14,7 +14,7 @@ Drop your brokerage CSV exports into `personal_data/raw_account_details/<owner>/
 
 ## Setup
 
-**Requirements:** Python 3.14+, [`uv`](https://github.com/astral-sh/uv)
+**Requirements:** Python 3.11+, [`uv`](https://github.com/astral-sh/uv)
 
 ```bash
 pip install uv
@@ -326,11 +326,11 @@ python -m uv run pytest tests/ -v
 npm run test:frontend
 ```
 
-Test fixtures live in `tests/fixtures/john/<institution>/` and use anonymized data with round-number values.
+Test fixtures live under `tests/fixture_data/` and include raw exports plus test-owned metadata, registry, and compositions files.
 
 ### Frontend Browser Tests
 
-Frontend tests use Playwright against the real FastAPI app served from fixture data in `tests/fixtures`.
+Frontend tests use Playwright against the real FastAPI app served from fixture data in `tests/fixture_data`.
 
 Setup:
 

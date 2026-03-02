@@ -1,0 +1,8 @@
+institution_name,account_name,account_number,account_type,is_retirement,owner
+Fidelity,Test Brokerage,X11111111,brokerage,false,john
+Fidelity,Test IRA,X22222222,roth_ira,true,john
+Schwab,Test Brokerage ...001,001,brokerage,false,john
+Schwab,Test IRA ...002,002,traditional_ira,true,john
+Interactive Brokers,Test Trust,U22222222,trust,false,john
+Alight,Test 401k Plan,Test 401k Plan,401k,true,john
+Alight,Test 403b Plan,Test 403b Plan,403b,true,john
