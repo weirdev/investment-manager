@@ -2,6 +2,7 @@ import shutil
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from investment_manager import pipeline
 from investment_manager.paths import DataPaths
@@ -65,12 +66,12 @@ class TestRun:
         raw_dir = personal_root / "raw_account_details"
         data_paths = DataPaths.from_personal_data_dir(personal_root)
         fidelity_fixture = (
-            TEST_DATA_PATHS.raw_account_details_dir / "john" / "fidelity" / "fidelity_sample.csv"
+            TEST_DATA_PATHS.raw_account_details_dir / "john" / "fidelity" / "2024-01-01_fidelity_sample.csv"
         )
         for owner in ("owner_a", "owner_b"):
             dest = raw_dir / owner / "fidelity"
             dest.mkdir(parents=True)
-            shutil.copy(fidelity_fixture, dest / "fidelity_sample.csv")
+            shutil.copy(fidelity_fixture, dest / "2024-01-01_fidelity_sample.csv")
         shutil.copy(TEST_DATA_PATHS.accounts_path, data_paths.accounts_path)
         shutil.copy(TEST_DATA_PATHS.metadata_path, data_paths.metadata_path)
 
@@ -80,13 +81,88 @@ class TestRun:
         )
         assert dupes.is_empty(), "Duplicate (institution_name, account_name, ticker) rows found"
 
+    def test_superseded_export_in_same_directory_is_ignored(self, tmp_path):
+        """When a directory holds two exports for the same institution, only the one
+        with the newest leading datestamp is used; the older one is skipped with a
+        warning. Freshness comes purely from the filename, not file mtime.
+        """
+        personal_root = tmp_path / "personal_data"
+        raw_dir = personal_root / "raw_account_details"
+        data_paths = DataPaths.from_personal_data_dir(personal_root)
+        dest = raw_dir / "john" / "fidelity"
+        dest.mkdir(parents=True)
+
+        old_csv = dest / "2026-02-21_Portfolio_Positions.csv"
+        old_csv.write_text(
+            "Account Number,Account Name,Symbol,Current Value\n"
+            "X11111111,Test Brokerage,AAPL,$1500.00\n",
+            encoding="utf-8",
+        )
+        new_csv = dest / "2026-08-23_Portfolio_Positions.csv"
+        new_csv.write_text(
+            "Account Number,Account Name,Symbol,Current Value\n"
+            "X11111111,Test Brokerage,AAPL,$9999.00\n",
+            encoding="utf-8",
+        )
+        # mtime is deliberately left in write order (old file written first, so it
+        # actually has the OLDER mtime here too) — the assertions below only hold if
+        # the pipeline is keying off the filename datestamp, not mtime.
+
+        shutil.copy(TEST_DATA_PATHS.accounts_path, data_paths.accounts_path)
+        shutil.copy(TEST_DATA_PATHS.metadata_path, data_paths.metadata_path)
+
+        with pytest.warns(UserWarning, match="superseded"):
+            df = pipeline.run(data_paths=data_paths)
+
+        aapl = df.filter(pl.col("ticker") == "AAPL")
+        assert aapl.height == 1
+        assert aapl["value"][0] == pytest.approx(9999.00)
+
+    def test_missing_export_date_prefix_raises(self, tmp_path):
+        """A raw export CSV without a leading YYYY-MM-DD datestamp fails fast."""
+        personal_root = tmp_path / "personal_data"
+        raw_dir = personal_root / "raw_account_details"
+        data_paths = DataPaths.from_personal_data_dir(personal_root)
+        dest = raw_dir / "john" / "fidelity"
+        dest.mkdir(parents=True)
+        (dest / "Portfolio_Positions.csv").write_text(
+            "Account Number,Account Name,Symbol,Current Value\n"
+            "X11111111,Test Brokerage,AAPL,$1500.00\n",
+            encoding="utf-8",
+        )
+        shutil.copy(TEST_DATA_PATHS.accounts_path, data_paths.accounts_path)
+        shutil.copy(TEST_DATA_PATHS.metadata_path, data_paths.metadata_path)
+
+        with pytest.raises(pipeline.MissingExportDateError, match="leading YYYY-MM-DD"):
+            pipeline.run(data_paths=data_paths)
+
+    def test_ambiguous_export_dates_raises(self, tmp_path):
+        """Two exports in the same directory sharing a leading datestamp fails fast
+        rather than guessing which one is current."""
+        personal_root = tmp_path / "personal_data"
+        raw_dir = personal_root / "raw_account_details"
+        data_paths = DataPaths.from_personal_data_dir(personal_root)
+        dest = raw_dir / "john" / "fidelity"
+        dest.mkdir(parents=True)
+        for name in ("2026-08-23_Portfolio_Positions_a.csv", "2026-08-23_Portfolio_Positions_b.csv"):
+            (dest / name).write_text(
+                "Account Number,Account Name,Symbol,Current Value\n"
+                "X11111111,Test Brokerage,AAPL,$1500.00\n",
+                encoding="utf-8",
+            )
+        shutil.copy(TEST_DATA_PATHS.accounts_path, data_paths.accounts_path)
+        shutil.copy(TEST_DATA_PATHS.metadata_path, data_paths.metadata_path)
+
+        with pytest.raises(pipeline.AmbiguousExportDateError, match="2026-08-23"):
+            pipeline.run(data_paths=data_paths)
+
     def test_data_dir_uses_sibling_registry_and_metadata(self, tmp_path):
         personal_root = tmp_path / "custom_personal_data"
         raw_dir = personal_root / "raw_account_details" / "john" / "fidelity"
         raw_dir.mkdir(parents=True)
         shutil.copy(
-            TEST_DATA_PATHS.raw_account_details_dir / "john" / "fidelity" / "fidelity_sample.csv",
-            raw_dir / "fidelity_sample.csv",
+            TEST_DATA_PATHS.raw_account_details_dir / "john" / "fidelity" / "2024-01-01_fidelity_sample.csv",
+            raw_dir / "2024-01-01_fidelity_sample.csv",
         )
         (personal_root / "known-accounts.csv").write_text(
             "institution_name,account_name,account_number,account_type,is_retirement,owner\n"

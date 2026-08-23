@@ -6,6 +6,9 @@ from investment_manager.parsers.fidelity import FidelityParser
 from investment_manager.registry import AccountRegistry
 
 FIXTURE = Path(__file__).parent / "fixtures" / "john" / "fidelity" / "fidelity_sample.csv"
+LOWERCASE_HEADER_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "john" / "fidelity" / "fidelity_sample_lowercase_headers.csv"
+)
 NON_FIDELITY = Path(__file__).parent / "fixtures" / "not_fidelity.csv"
 
 
@@ -23,6 +26,11 @@ class TestCanParse:
     def test_rejects_nonexistent_file(self):
         assert FidelityParser.can_parse(NON_FIDELITY) is False
 
+    def test_detects_fidelity_csv_with_lowercase_headers(self):
+        # Fidelity has changed header casing between exports
+        # (e.g. "Account Number" vs "Account number"); detection must be case-insensitive.
+        assert FidelityParser.can_parse(LOWERCASE_HEADER_FIXTURE) is True
+
 
 class TestParse:
     def setup_method(self):
@@ -32,6 +40,13 @@ class TestParse:
         positions = self.parser.parse(FIXTURE)
         assert isinstance(positions, list)
         assert len(positions) == 4
+
+    def test_parses_lowercase_headers_identically(self):
+        positions = self.parser.parse(LOWERCASE_HEADER_FIXTURE)
+        assert len(positions) == 4
+        aapl = next(p for p in positions if p.ticker == "AAPL")
+        assert aapl.value == pytest.approx(1500.00)
+        assert aapl.account_name == "Test Brokerage"
 
     def test_excludes_non_fidelity_accounts(self):
         positions = self.parser.parse(FIXTURE)
