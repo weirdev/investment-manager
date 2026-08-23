@@ -8,6 +8,8 @@ A personal finance tool that aggregates investment positions across multiple bro
 
 Drop your brokerage CSV exports into `personal_data/raw_account_details/<owner>/<institution>/` and run a single command to see your full portfolio consolidated across all accounts — with positions classified by asset class, market segment, region, and account type.
 
+**Name every export with a leading datestamp:** `<YYYY-MM-DD>_<original-filename>.csv`, where the date is when the export was generated. This is how the pipeline knows which file is current when you drop in a fresh export without deleting the old one — see [Refreshing exports](#refreshing-exports).
+
 **Supported institutions:** Fidelity, Schwab, Interactive Brokers, Alight (extensible via the `/add-institution` Claude command)
 
 ---
@@ -47,6 +49,15 @@ personal_data/
 `personal_data/` is gitignored. The schema files at `personal_data/*.csv` define what metadata is expected.
 
 Shared accounts (e.g. a joint trust held by multiple owners) can appear in multiple owner directories. The pipeline deduplicates on `(institution, account, ticker)` so they count once in the aggregate view.
+
+### Refreshing exports
+
+Every raw export **must** be named `<YYYY-MM-DD>_<original-filename>.csv` — the leading date is the export date, and it's the only signal the pipeline uses to tell which file is current.
+
+- Drop the new export alongside the old one; no need to delete the old file first.
+- If a directory ends up with more than one export, the pipeline uses only the one with the newest leading date and warns about the superseded file(s) it ignored — it will *not* silently mix values from both.
+- A CSV with no leading datestamp, or two exports in the same directory sharing the same date, raises an error (`MissingExportDateError` / `AmbiguousExportDateError`) rather than guessing.
+- Old exports can be left in place as an archive once superseded — just expect a warning on every run until they're removed.
 
 ---
 
@@ -376,9 +387,10 @@ src/investment_manager/
 
 **Pipeline flow:**
 1. `pipeline.run()` recursively finds all `*.csv` files under `raw_account_details/`
-2. Each file is matched to a parser via `can_parse()`
-3. Parsers emit `list[Position]` (each with an `owner` from the registry); all are merged
-4. Positions are deduplicated on `(institution_name, account_number, ticker)` — shared accounts across owner directories count once
-5. `_discover_mapping_paths()` traverses `<owner>/<institution>/` dirs, collecting `*-asset-mapping.csv` paths (each institution discovered once)
-6. `enrich()` joins the mapping (raw → canonical ticker) then the metadata (ticker → asset class)
-7. If `anonymize=True`, all `value` fields are scaled so the portfolio totals ~$100,000 (positions below $0.01 are floored to $0.01)
+2. `_latest_export_per_directory()` keeps only the newest-dated file (by its required leading `YYYY-MM-DD` filename prefix) per directory, ignoring superseded exports left behind as archives — see [Refreshing exports](#refreshing-exports)
+3. Each remaining file is matched to a parser via `can_parse()`
+4. Parsers emit `list[Position]` (each with an `owner` from the registry); all are merged
+5. Positions are deduplicated on `(institution_name, account_number, ticker)` — shared accounts across owner directories count once
+6. `_discover_mapping_paths()` traverses `<owner>/<institution>/` dirs, collecting `*-asset-mapping.csv` paths (each institution discovered once)
+7. `enrich()` joins the mapping (raw → canonical ticker) then the metadata (ticker → asset class)
+8. If `anonymize=True`, all `value` fields are scaled so the portfolio totals ~$100,000 (positions below $0.01 are floored to $0.01)
