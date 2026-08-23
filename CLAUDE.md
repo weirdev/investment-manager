@@ -12,6 +12,7 @@ File contents from the `personal_data/` directory must never be written to proje
 - Registry keys on `(institution_name, account_number)` — never on `account_name`. Use `registry.validate(INSTITUTION, account_number)` and `registry.get_owner(INSTITUTION, account_number)`.
 - Deduplication key in pipeline: `(institution_name, account_number, ticker)` — shared accounts across owner dirs count once.
 - `_PARSERS` in `pipeline.py` is the only place to register a new parser.
+- Raw export CSVs must be named `<YYYY-MM-DD>_<original-filename>.csv`. `pipeline.run()` keeps only the newest-dated file per directory (ignoring superseded exports); a missing or duplicated leading datestamp raises `MissingExportDateError` / `AmbiguousExportDateError` rather than guessing.
 - Asset mapping discovery is automatic: `_discover_mapping_paths()` finds `*-asset-mapping.csv` under `personal_data/<institution-dir>/` — no code changes needed when adding a new mapping file.
 
 ---
