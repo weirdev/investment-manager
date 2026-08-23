@@ -11,8 +11,11 @@ from .utils import parse_dollar
 
 INSTITUTION = "Fidelity"
 
-# Required columns that identify a Fidelity portfolio export
+# Required columns that identify a Fidelity portfolio export.
+# Matched case-insensitively — Fidelity has changed header casing between
+# exports (e.g. "Account Number" vs "Account number").
 _FIDELITY_REQUIRED_COLS = {"Account Number", "Account Name", "Symbol", "Current Value"}
+_FIDELITY_REQUIRED_COLS_LOWER = {col.lower() for col in _FIDELITY_REQUIRED_COLS}
 
 
 def _clean_ticker(symbol: str) -> str:
@@ -40,8 +43,8 @@ class FidelityParser(InstitutionParser):
         try:
             with file_path.open(newline="", encoding="utf-8-sig") as f:
                 reader = csv.DictReader(f)
-                headers = set(reader.fieldnames or [])
-            return _FIDELITY_REQUIRED_COLS.issubset(headers)
+                headers_lower = {(h or "").lower() for h in (reader.fieldnames or [])}
+            return _FIDELITY_REQUIRED_COLS_LOWER.issubset(headers_lower)
         except Exception:
             return False
 
@@ -50,12 +53,14 @@ class FidelityParser(InstitutionParser):
         with file_path.open(newline="", encoding="utf-8-sig") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                account_number = (row.get("Account Number") or "").strip()
+                row_ci = {(k or "").lower(): v for k, v in row.items()}
+
+                account_number = (row_ci.get("account number") or "").strip()
                 if not _is_fidelity_account(account_number):
                     logger.debug("Skipping linked external account %r in %s", account_number, file_path.name)
                     continue
 
-                symbol = (row.get("Symbol") or "").strip()
+                symbol = (row_ci.get("symbol") or "").strip()
                 if not symbol:
                     continue
 
@@ -63,12 +68,12 @@ class FidelityParser(InstitutionParser):
                 if not ticker:
                     continue
 
-                raw_value = row.get("Current Value") or ""
+                raw_value = row_ci.get("current value") or ""
                 value = parse_dollar(raw_value)
                 if value is None:
                     continue
 
-                account_name = (row.get("Account Name") or "").strip()
+                account_name = (row_ci.get("account name") or "").strip()
                 account_type = self._registry.validate(INSTITUTION, account_number)
                 owner = self._registry.get_owner(INSTITUTION, account_number)
                 is_retirement = self._registry.get_is_retirement(INSTITUTION, account_number)
