@@ -14,6 +14,7 @@ File contents from the `personal_data/` directory must never be written to proje
 - `_PARSERS` in `pipeline.py` is the only place to register a new parser.
 - Raw export CSVs must be named `<YYYY-MM-DD>_<original-filename>.csv`. `pipeline.run()` keeps only the newest-dated file per directory (ignoring superseded exports); a missing or duplicated leading datestamp raises `MissingExportDateError` / `AmbiguousExportDateError` rather than guessing.
 - Asset mapping discovery is automatic: `_discover_mapping_paths()` finds `*-asset-mapping.csv` under `personal_data/<institution-dir>/` — no code changes needed when adding a new mapping file.
+- Institutions change export formats without notice (header casing, summary-row labels, etc.) — parsers should tolerate known variants rather than assume a format is fixed. Example: Schwab renamed its per-account summary row from `"Account Total"` to `"Positions Total"`; `schwab.py`'s `_SKIP_SYMBOLS` recognizes both.
 
 ---
 
