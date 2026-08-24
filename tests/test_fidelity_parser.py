@@ -9,6 +9,9 @@ FIXTURE = Path(__file__).parent / "fixtures" / "john" / "fidelity" / "fidelity_s
 LOWERCASE_HEADER_FIXTURE = (
     Path(__file__).parent / "fixtures" / "john" / "fidelity" / "fidelity_sample_lowercase_headers.csv"
 )
+BLANK_SYMBOL_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "john" / "fidelity" / "fidelity_sample_blank_symbol.csv"
+)
 NON_FIDELITY = Path(__file__).parent / "fixtures" / "not_fidelity.csv"
 
 
@@ -47,6 +50,16 @@ class TestParse:
         aapl = next(p for p in positions if p.ticker == "AAPL")
         assert aapl.value == pytest.approx(1500.00)
         assert aapl.account_name == "Test Brokerage"
+
+    def test_blank_symbol_falls_back_to_description(self):
+        # Fidelity leaves Symbol blank for some proprietary 401(k) collective
+        # investment trust funds with no public ticker; the position must
+        # still be counted rather than silently dropped.
+        positions = self.parser.parse(BLANK_SYMBOL_FIXTURE)
+        assert len(positions) == 2
+        tickers = {p.ticker for p in positions}
+        assert "SS US INFL PROT BD" in tickers
+        assert sum(p.value for p in positions) == pytest.approx(2000.00)
 
     def test_excludes_non_fidelity_accounts(self):
         positions = self.parser.parse(FIXTURE)

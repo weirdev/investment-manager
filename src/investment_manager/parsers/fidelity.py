@@ -62,6 +62,14 @@ class FidelityParser(InstitutionParser):
 
                 symbol = (row_ci.get("symbol") or "").strip()
                 if not symbol:
+                    # Fidelity leaves Symbol blank for some proprietary 401(k)
+                    # collective investment trust funds that have no public
+                    # ticker (e.g. State Street collective funds inside an
+                    # employer plan). Fall back to the Description text as a
+                    # pseudo-ticker rather than silently dropping the position
+                    # -- map it to a canonical asset via /update-assets.
+                    symbol = (row_ci.get("description") or "").strip()
+                if not symbol:
                     continue
 
                 ticker = _clean_ticker(symbol)
