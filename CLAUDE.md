@@ -15,6 +15,7 @@ File contents from the `personal_data/` directory must never be written to proje
 - Raw export CSVs must be named `<YYYY-MM-DD>_<original-filename>.csv`. `pipeline.run()` keeps only the newest-dated file per directory (ignoring superseded exports); a missing or duplicated leading datestamp raises `MissingExportDateError` / `AmbiguousExportDateError` rather than guessing.
 - Asset mapping discovery is automatic: `_discover_mapping_paths()` finds `*-asset-mapping.csv` under `personal_data/<institution-dir>/` — no code changes needed when adding a new mapping file.
 - Institutions change export formats without notice (header casing, summary-row labels, etc.) — parsers should tolerate known variants rather than assume a format is fixed. Example: Schwab renamed its per-account summary row from `"Account Total"` to `"Positions Total"`; `schwab.py`'s `_SKIP_SYMBOLS` recognizes both.
+- Fidelity leaves the `Symbol` column blank for some proprietary 401(k) collective investment trust funds (no public ticker). `fidelity.py` falls back to the `Description` text as a pseudo-ticker rather than dropping the position — silently skipping blank-symbol rows previously understated real account values by 5-6 figures. Map the resulting description-based ticker via `/update-assets` like any other unknown ticker.
 
 ---
 
