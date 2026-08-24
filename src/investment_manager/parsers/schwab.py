@@ -10,7 +10,9 @@ from .utils import parse_dollar
 
 INSTITUTION = "Schwab"
 
-_SKIP_SYMBOLS = {"Cash & Cash Investments", "Account Total", ""}
+# "Account Total" was Schwab's original name for the per-account summary row;
+# newer exports rename it to "Positions Total". Skip both.
+_SKIP_SYMBOLS = {"Cash & Cash Investments", "Account Total", "Positions Total", ""}
 
 
 def _is_account_name_line(line: str) -> bool:

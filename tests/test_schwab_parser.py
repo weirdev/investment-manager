@@ -7,6 +7,9 @@ from investment_manager.parsers.schwab import SchwabParser
 from investment_manager.registry import AccountRegistry
 
 FIXTURE = Path(__file__).parent / "fixtures" / "john" / "schwab" / "schwab_sample.csv"
+POSITIONS_TOTAL_FIXTURE = (
+    Path(__file__).parent / "fixtures" / "john" / "schwab" / "schwab_sample_positions_total.csv"
+)
 NON_SCHWAB = Path(__file__).parent / "fixtures" / "schwab" / "not_schwab.csv"
 
 
@@ -45,6 +48,14 @@ class TestParse:
         positions = self.parser.parse(FIXTURE)
         tickers = {p.ticker for p in positions}
         assert "Cash & Cash Investments" not in tickers
+
+    def test_skips_positions_total_rows(self):
+        # Schwab renamed the per-account summary row from "Account Total" to
+        # "Positions Total" in a later export format; both must be skipped.
+        positions = self.parser.parse(POSITIONS_TOTAL_FIXTURE)
+        tickers = {p.ticker for p in positions}
+        assert "Positions Total" not in tickers
+        assert len(positions) == 3
 
     def test_value_parsed_correctly(self):
         positions = self.parser.parse(FIXTURE)
