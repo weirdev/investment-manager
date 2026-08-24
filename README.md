@@ -372,7 +372,7 @@ src/investment_manager/
 ├── parsers/
 │   ├── base.py                 # Abstract InstitutionParser
 │   ├── utils.py                # Shared CSV parsing helpers
-│   ├── fidelity.py             # Fidelity flat-CSV parser
+│   ├── fidelity.py             # Fidelity flat-CSV parser (falls back to Description as a pseudo-ticker when Symbol is blank, e.g. proprietary 401(k) collective trust funds)
 │   ├── schwab.py               # Schwab multi-section parser (tolerates both "Account Total" and "Positions Total" summary-row labels — Schwab has renamed this between exports)
 │   ├── interactive_brokers.py  # Interactive Brokers Flex Query parser
 │   └── alight.py               # Alight 401(k) flat-CSV parser
