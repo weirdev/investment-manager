@@ -373,7 +373,7 @@ src/investment_manager/
 │   ├── base.py                 # Abstract InstitutionParser
 │   ├── utils.py                # Shared CSV parsing helpers
 │   ├── fidelity.py             # Fidelity flat-CSV parser
-│   ├── schwab.py               # Schwab multi-section parser
+│   ├── schwab.py               # Schwab multi-section parser (tolerates both "Account Total" and "Positions Total" summary-row labels — Schwab has renamed this between exports)
 │   ├── interactive_brokers.py  # Interactive Brokers Flex Query parser
 │   └── alight.py               # Alight 401(k) flat-CSV parser
 ├── pipeline.py        # Discovers CSVs, selects parsers, deduplicates, merges to DataFrame
