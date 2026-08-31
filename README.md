@@ -184,6 +184,32 @@ python -m uv run invest decomposition
 python -m uv run invest decomposition --no-account-type   # collapse across account types
 ```
 
+### `invest rebalancing`
+
+Compares the equity sleeve's market-cap tier distribution against a total global market-cap-weighted benchmark. Positions are decomposed look-through first (like `invest decomposition`), filtered to `equities`, and bucketed into four tiers — `large_cap`, `mid_cap`, `small_cap`, and `emerging` (emerging markets is its own tier regardless of company size). Equity value that doesn't resolve to a specific tier after decomposition (broad total-market funds, sector/dividend funds, unmapped tickers) is redistributed across large/mid/small_cap in proportion to the benchmark's developed-market tier weights. Both sides are renormalized to 100% of the equity sleeve; `drift_pct` is your weight minus the market weight, in percentage points.
+
+The benchmark weights live in `src/investment_manager/data/global-market-cap-weights.csv` (committed, editable — approximate FTSE Global All Cap / MSCI ACWI IMI proportions).
+
+```bash
+python -m uv run invest rebalancing
+```
+
+**Example output:**
+```
+shape: (4, 4)
+┌─────────────────┬───────────────┬────────────┬───────────┐
+│ market_cap_tier ┆ portfolio_pct ┆ market_pct ┆ drift_pct │
+│ ---             ┆ ---           ┆ ---        ┆ ---       │
+│ str             ┆ f64           ┆ f64        ┆ f64       │
+╞═════════════════╪═══════════════╪════════════╪═══════════╡
+│ large_cap       ┆ 64.20         ┆ 67.00      ┆ -2.80     │
+│ mid_cap         ┆ 15.70         ┆ 14.00      ┆ 1.70      │
+│ small_cap       ┆ 10.80         ┆ 9.00       ┆ 1.80      │
+│ emerging        ┆ 9.30          ┆ 10.00      ┆ -0.70     │
+└─────────────────┴───────────────┴────────────┴───────────┘
+Total: $181,282.10
+```
+
 ### `invest precious-metals`
 
 Shows precious metals holdings grouped by institution, account, and ticker — with value and percentage of the full portfolio.
@@ -216,7 +242,7 @@ python -m uv run invest serve --host 0.0.0.0 --port 9000
 python -m uv run invest serve --anonymize   # lock all API responses to anonymized values
 ```
 
-Open `http://127.0.0.1:8000` in your browser. Views: Positions, Concentration, Decomposition, Allocations, Precious Metals.
+Open `http://127.0.0.1:8000` in your browser. Views: Positions, Concentration, Decomposition, Allocations, Precious Metals, Rebalancing.
 
 The sidebar includes an **Anonymize** toggle that normalizes all displayed amounts to ~$100,000 on the fly. Passing `--anonymize` to `serve` locks this toggle to the enabled state for all visitors, regardless of their individual toggle setting.
 
@@ -271,6 +297,21 @@ SPAXX,cash,money_market,,us
 **Asset classes:** `equities`, `fixed_income`, `real_estate`, `precious_metals`, `cash`
 **Security types:** `etf`, `stock`, `mutual_fund`, `money_market`, `stable_value`
 **Regions:** `us`, `ex_us`, `emerging`, `global`
+
+### `src/investment_manager/data/global-market-cap-weights.csv`
+
+The total-global-market benchmark used by `invest rebalancing` and the web dashboard's Rebalancing view. Unlike the files above, this is **committed to the repo** (it's public index data, not personal) — edit it in place to tune the benchmark. One row per `(region, market_segment)`, weights summing to ~1.0.
+
+```csv
+region,market_segment,weight
+us,large_cap,0.46
+us,mid_cap,0.09
+us,small_cap,0.06
+ex_us,large_cap,0.21
+ex_us,mid_cap,0.05
+ex_us,small_cap,0.03
+emerging,emerging,0.10
+```
 
 ---
 
@@ -380,9 +421,11 @@ src/investment_manager/
 ├── enrichment.py      # Joins asset mapping + metadata onto positions
 ├── decomposition.py   # Fund look-through: expands composite tickers into component rows
 ├── analysis.py        # aggregate_positions(), concentration_breakdown(), precious_metals_by_account(), allocation_breakdown(), owner_breakdown()
+├── rebalancing.py     # Equity market-cap tier mix vs. global benchmark: load_market_weights(), market_cap_comparison()
+├── data/              # Committed reference data (global-market-cap-weights.csv)
 ├── server.py          # FastAPI web dashboard server and JSON API routes
 ├── web/               # SPA frontend (index.html, app.js, style.css)
-└── cli.py             # Typer CLI: invest positions / concentration / decomposition / precious-metals / allocations / owners / serve
+└── cli.py             # Typer CLI: invest positions / concentration / decomposition / precious-metals / allocations / owners / rebalancing / serve
 ```
 
 **Pipeline flow:**
