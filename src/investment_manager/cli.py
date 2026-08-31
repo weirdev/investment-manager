@@ -8,6 +8,7 @@ import typer
 
 from . import analysis, pipeline
 from . import decomposition as decomp
+from . import rebalancing as rebal
 from .paths import DEFAULT_DATA_PATHS, DataPaths
 
 
@@ -179,6 +180,37 @@ def allocations(
     breakdown = analysis.allocation_breakdown(df, by_retirement=by_retirement)
     with pl_options():
         _safe_echo(str(breakdown))
+    _safe_echo(_total_line(df))
+
+
+@app.command()
+def rebalancing(
+    data_dir: _DataDirOption = None,
+    anonymize: _AnonymizeOption = False,
+    by_retirement: _ByRetirementOption = False,
+) -> None:
+    """Compare the equity sleeve's market-cap tier mix to a global market-cap benchmark."""
+    resolved = _resolve_data_paths(data_dir)
+    df = pipeline.run(data_paths=resolved, anonymize=anonymize)
+    if df.is_empty():
+        typer.echo("No positions found.")
+        raise typer.Exit(1)
+
+    compositions = decomp.load_fund_compositions(resolved.compositions_path)
+    decomposed = decomp.decompose(df, compositions)
+    market_weights = rebal.load_market_weights()
+    by_cap = rebal.market_cap_comparison(decomposed, market_weights, by_retirement=by_retirement)
+    by_region = rebal.region_comparison(decomposed, market_weights, by_retirement=by_retirement)
+    if by_cap.is_empty() and by_region.is_empty():
+        typer.echo("No equity positions found.")
+        raise typer.Exit(1)
+
+    with pl_options():
+        _safe_echo("By market cap:")
+        _safe_echo(str(by_cap))
+        _safe_echo("")
+        _safe_echo("By region and cap tier:")
+        _safe_echo(str(by_region))
     _safe_echo(_total_line(df))
 
 

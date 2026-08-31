@@ -6,9 +6,9 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-from . import analysis, pipeline
+from . import analysis, pipeline, rebalancing
 from . import decomposition as decomp
-from .paths import DEFAULT_DATA_PATHS, DataPaths
+from .paths import DEFAULT_DATA_PATHS, DEFAULT_MARKET_WEIGHTS_PATH, DataPaths
 
 _WEB_DIR = Path(__file__).parent / "web"
 
@@ -24,6 +24,13 @@ class TableResponse(BaseModel):
 
 class PreciousMetalsResponse(TableResponse):
     metals_total: float
+
+
+class RebalancingResponse(BaseModel):
+    market_cap: list[dict[str, Any]]
+    regions: list[dict[str, Any]]
+    total: float
+    equity_total: float
 
 
 def _path_signature(paths: list[Path]) -> tuple[tuple[str, int | None, int | None], ...]:
@@ -125,6 +132,22 @@ def create_app(
         metals_total = float(breakdown["value"].sum()) if not breakdown.is_empty() else 0.0
         total = float(df["value"].sum())
         return {"rows": breakdown.to_dicts(), "metals_total": metals_total, "total": total}
+
+    @app.get("/api/rebalancing", response_model=RebalancingResponse)
+    def api_rebalancing(anonymize: bool = False, by_retirement: bool = False) -> RebalancingResponse:
+        df = _load(anonymize)
+        decomposed = _load_decomposed(anonymize)
+        market_weights = rebalancing.load_market_weights(DEFAULT_MARKET_WEIGHTS_PATH)
+        return {
+            "market_cap": rebalancing.market_cap_comparison(
+                decomposed, market_weights, by_retirement=by_retirement
+            ).to_dicts(),
+            "regions": rebalancing.region_comparison(
+                decomposed, market_weights, by_retirement=by_retirement
+            ).to_dicts(),
+            "equity_total": rebalancing.equity_sleeve_total(decomposed),
+            "total": float(df["value"].sum()),
+        }
 
     @app.get("/")
     def root():

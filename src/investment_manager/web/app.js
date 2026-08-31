@@ -109,6 +109,7 @@ function getThemeColors() {
   return {
     chartTitle: styles.getPropertyValue("--chart-title").trim(),
     chartText: styles.getPropertyValue("--chart-text").trim(),
+    gridColor: styles.getPropertyValue("--border").trim(),
   };
 }
 
@@ -482,6 +483,33 @@ function renderTreemap(container, labels, values, title) {
   }, { responsive: true, displayModeBar: false });
 }
 
+function renderGroupedBar(container, categories, series, title) {
+  const themeColors = getThemeColors();
+  const el = document.createElement("div");
+  el.className = "chart-container";
+  container.appendChild(el);
+  const traces = series.map((s, i) => ({
+    type: "bar",
+    name: s.name,
+    x: categories,
+    y: s.values,
+    marker: { color: CHART_COLORS[i % CHART_COLORS.length] },
+    hovertemplate: `<b>%{x}</b><br>${s.name}: %{y:.2f}%<extra></extra>`,
+  }));
+  Plotly.newPlot(el, traces, {
+    paper_bgcolor: "transparent",
+    plot_bgcolor: "transparent",
+    barmode: "group",
+    title: { text: title || "", font: { size: 15, color: themeColors.chartTitle, family: "Outfit, sans-serif" } },
+    height: 400,
+    margin: { t: 60, b: 55, l: 55, r: 20 },
+    legend: { orientation: "h", y: -0.18, x: 0, font: { color: themeColors.chartText, family: "Outfit, sans-serif" } },
+    xaxis: { color: themeColors.chartText, gridcolor: themeColors.gridColor, tickfont: { family: "Outfit, sans-serif", size: 13 } },
+    yaxis: { color: themeColors.chartText, gridcolor: themeColors.gridColor, zerolinecolor: themeColors.gridColor, ticksuffix: "%", rangemode: "tozero" },
+    font: { color: themeColors.chartText, family: "Outfit, sans-serif", size: 14 },
+  }, { responsive: true, displayModeBar: false });
+}
+
 // ── Page renderers ──────────────────────────────────────────────────────────
 
 function showPositions(view, data) {
@@ -597,6 +625,139 @@ function showPreciousMetals(view, data) {
   });
 }
 
+const REBALANCING_TIER_LABELS = {
+  large_cap: "Large Cap",
+  mid_cap: "Mid Cap",
+  small_cap: "Small Cap",
+  emerging: "Emerging",
+};
+
+const REBALANCING_REGION_LABELS = {
+  us: "United States",
+  ex_us: "Developed ex-US",
+  emerging: "Emerging Markets",
+};
+const REBALANCING_REGION_ORDER = ["us", "ex_us", "emerging"];
+const REBALANCING_PCT_FIELDS = ["portfolio_pct", "market_pct", "drift_pct"];
+
+// Build grouped-bar { categories, series } from comparison rows already in display order.
+// `label(row)` -> x-axis category. Splits into Retirement / Non-retirement / Global market
+// when the rows carry an is_retirement flag, else Your portfolio / Global market.
+function rebalancingSeries(rows, label) {
+  if ("is_retirement" in rows[0]) {
+    const ret = rows.filter(r => r.is_retirement === true);
+    const non = rows.filter(r => r.is_retirement === false);
+    const ref = ret.length ? ret : non;
+    const series = [];
+    if (ret.length) series.push({ name: "Retirement", values: ret.map(r => r.portfolio_pct) });
+    if (non.length) series.push({ name: "Non-retirement", values: non.map(r => r.portfolio_pct) });
+    series.push({ name: "Global market", values: ref.map(r => r.market_pct) });
+    return { categories: ref.map(label), series };
+  }
+  return {
+    categories: rows.map(label),
+    series: [
+      { name: "Your portfolio", values: rows.map(r => r.portfolio_pct) },
+      { name: "Global market", values: rows.map(r => r.market_pct) },
+    ],
+  };
+}
+
+function rebalancingSectionTitle(view, text) {
+  const h = document.createElement("h3");
+  h.className = "section-title";
+  h.textContent = text;
+  view.appendChild(h);
+}
+
+function showRebalancingCapSection(view, rows) {
+  if (!rows.length) return;
+  rebalancingSectionTitle(view, "By market cap");
+  const byRet = "is_retirement" in rows[0];
+  const label = r => REBALANCING_TIER_LABELS[r.market_cap_tier] || r.market_cap_tier;
+
+  const { categories, series } = rebalancingSeries(rows, label);
+  renderGroupedBar(view, categories, series, "");
+
+  const displayRows = rows.map(r => ({
+    ...r,
+    market_cap_tier: label(r),
+    ...(byRet ? { is_retirement: r.is_retirement ? "Retirement" : "Non-retirement" } : {}),
+  }));
+  const columns = byRet
+    ? ["is_retirement", "market_cap_tier", ...REBALANCING_PCT_FIELDS]
+    : ["market_cap_tier", ...REBALANCING_PCT_FIELDS];
+  const el = document.createElement("div");
+  view.appendChild(el);
+  renderTable(el, columns, displayRows, { pctFields: REBALANCING_PCT_FIELDS });
+}
+
+function showRebalancingRegionSection(view, rows) {
+  if (!rows.length) return;
+  rebalancingSectionTitle(view, "By region and cap tier");
+  const byRet = "is_retirement" in rows[0];
+  const round2 = x => Math.round(x * 100) / 100;
+
+  // Chart shows regional totals (cap tiers summed within each region).
+  function regionTotals(subset) {
+    const acc = {};
+    for (const r of subset) {
+      const a = acc[r.region] || (acc[r.region] = { region: r.region, portfolio_pct: 0, market_pct: 0 });
+      a.portfolio_pct += r.portfolio_pct;
+      a.market_pct += r.market_pct;
+    }
+    return REBALANCING_REGION_ORDER.filter(reg => acc[reg]).map(reg => ({
+      region: reg,
+      portfolio_pct: round2(acc[reg].portfolio_pct),
+      market_pct: round2(acc[reg].market_pct),
+    }));
+  }
+
+  let totalsRows;
+  if (byRet) {
+    totalsRows = [
+      ...regionTotals(rows.filter(r => r.is_retirement === true)).map(r => ({ ...r, is_retirement: true })),
+      ...regionTotals(rows.filter(r => r.is_retirement === false)).map(r => ({ ...r, is_retirement: false })),
+    ];
+  } else {
+    totalsRows = regionTotals(rows);
+  }
+  const regionLabel = r => REBALANCING_REGION_LABELS[r.region] || r.region;
+  const { categories, series } = rebalancingSeries(totalsRows, regionLabel);
+  renderGroupedBar(view, categories, series, "Regional totals");
+
+  // Table shows the full region x cap-tier grid.
+  const displayRows = rows.map(r => ({
+    ...r,
+    region: REBALANCING_REGION_LABELS[r.region] || r.region,
+    market_cap_tier: r.region === "emerging" ? "—" : (REBALANCING_TIER_LABELS[r.market_cap_tier] || r.market_cap_tier),
+    ...(byRet ? { is_retirement: r.is_retirement ? "Retirement" : "Non-retirement" } : {}),
+  }));
+  const columns = byRet
+    ? ["is_retirement", "region", "market_cap_tier", ...REBALANCING_PCT_FIELDS]
+    : ["region", "market_cap_tier", ...REBALANCING_PCT_FIELDS];
+  const el = document.createElement("div");
+  view.appendChild(el);
+  renderTable(el, columns, displayRows, { pctFields: REBALANCING_PCT_FIELDS });
+}
+
+function showRebalancing(view, data) {
+  const capRows = data.market_cap || [];
+  const regionRows = data.regions || [];
+  view.innerHTML = `<h2>Rebalancing</h2><p class="page-subtitle">Equity sleeve vs. global market-cap weights &middot; <span class="total-value">${fmtDollar(data.equity_total)}</span> in equities</p>`;
+
+  if (!capRows.length && !regionRows.length) {
+    const p = document.createElement("p");
+    p.className = "placeholder";
+    p.textContent = "No equity positions to compare.";
+    view.appendChild(p);
+    return;
+  }
+
+  showRebalancingCapSection(view, capRows);
+  showRebalancingRegionSection(view, regionRows);
+}
+
 // ── Router ──────────────────────────────────────────────────────────────────
 
 const ROUTES = {
@@ -605,6 +766,7 @@ const ROUTES = {
   "/decomposition": { api: "/api/decomposition", show: showDecomposition },
   "/allocations": { api: "/api/allocations", show: showAllocations },
   "/precious-metals": { api: "/api/precious-metals", show: showPreciousMetals },
+  "/rebalancing": { api: "/api/rebalancing", show: showRebalancing },
 };
 
 async function render() {
@@ -619,6 +781,11 @@ async function render() {
 
   if (!route) {
     view.innerHTML = `<p class="error">Unknown route: ${hash}</p>`;
+    return;
+  }
+
+  if (!route.api) {
+    route.show(view);
     return;
   }
 

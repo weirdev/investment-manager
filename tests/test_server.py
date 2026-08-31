@@ -66,3 +66,42 @@ class TestCreateAppCaching:
             positions()
 
         assert run_mock.call_count == 2
+
+    def test_rebalancing_returns_four_tier_rows_and_caches(self):
+        app = create_app(data_paths=TEST_DATA_PATHS)
+        df = _sample_df()
+        rebalancing = next(
+            route.endpoint for route in app.routes if getattr(route, "path", None) == "/api/rebalancing"
+        )
+
+        with patch("investment_manager.server.pipeline.run", return_value=df) as run_mock:
+            first = rebalancing()
+            second = rebalancing()
+
+        assert run_mock.call_count == 1
+        assert set(first) == {"market_cap", "regions", "total", "equity_total"}
+        assert first["equity_total"] == 1000.0
+        assert [r["market_cap_tier"] for r in first["market_cap"]] == [
+            "large_cap",
+            "mid_cap",
+            "small_cap",
+            "emerging",
+        ]
+        assert len(first["regions"]) == 7
+        assert second["market_cap"] == first["market_cap"]
+
+    def test_rebalancing_by_retirement_tags_rows(self):
+        app = create_app(data_paths=TEST_DATA_PATHS)
+        df = _sample_df()
+        rebalancing = next(
+            route.endpoint for route in app.routes if getattr(route, "path", None) == "/api/rebalancing"
+        )
+
+        with patch("investment_manager.server.pipeline.run", return_value=df):
+            result = rebalancing(by_retirement=True)
+
+        assert all("is_retirement" in r for r in result["market_cap"])
+        assert all("is_retirement" in r for r in result["regions"])
+        assert {r["is_retirement"] for r in result["market_cap"]} == {False}
+        assert len(result["market_cap"]) == 4
+        assert len(result["regions"]) == 7

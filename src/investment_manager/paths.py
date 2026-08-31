@@ -73,3 +73,8 @@ DEFAULT_DATA_DIR = DEFAULT_DATA_PATHS.raw_account_details_dir
 DEFAULT_METADATA_PATH = DEFAULT_DATA_PATHS.metadata_path
 DEFAULT_ACCOUNTS_PATH = DEFAULT_DATA_PATHS.accounts_path
 DEFAULT_COMPOSITIONS_PATH = DEFAULT_DATA_PATHS.compositions_path
+
+# Committed reference data that ships with the package (not user-specific, unlike the
+# personal_data/ files above). Resolved relative to the package, like server._WEB_DIR.
+REFERENCE_DATA_DIR = Path(__file__).parent / "data"
+DEFAULT_MARKET_WEIGHTS_PATH = REFERENCE_DATA_DIR / "global-market-cap-weights.csv"

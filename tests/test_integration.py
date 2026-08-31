@@ -1,7 +1,8 @@
 """Integration tests: run the real pipeline against hermetic fixture data with no mocking."""
+import polars as pl
 import pytest
 
-from investment_manager import analysis, pipeline
+from investment_manager import analysis, pipeline, rebalancing
 from investment_manager import decomposition as decomp
 from .conftest import TEST_DATA_PATHS
 
@@ -65,3 +66,41 @@ class TestDecompositionIntegration:
         original_total = positions_df["value"].sum()
         decomposed_total = decomposed["value"].sum()
         assert abs(decomposed_total - original_total) / original_total < 1e-4
+
+
+class TestRebalancingIntegration:
+    def test_market_cap_comparison_on_fixture_data(self, positions_df):
+        compositions = decomp.load_fund_compositions(TEST_DATA_PATHS.compositions_path)
+        decomposed = decomp.decompose(positions_df, compositions)
+        result = rebalancing.market_cap_comparison(decomposed, rebalancing.load_market_weights())
+        assert result["market_cap_tier"].to_list() == ["large_cap", "mid_cap", "small_cap", "emerging"]
+        assert abs(result["portfolio_pct"].sum() - 100.0) < 0.1
+        assert abs(result["market_pct"].sum() - 100.0) < 0.1
+
+    def test_market_cap_comparison_by_retirement_on_fixture_data(self, positions_df):
+        compositions = decomp.load_fund_compositions(TEST_DATA_PATHS.compositions_path)
+        decomposed = decomp.decompose(positions_df, compositions)
+        result = rebalancing.market_cap_comparison(
+            decomposed, rebalancing.load_market_weights(), by_retirement=True
+        )
+        assert "is_retirement" in result.columns
+        for is_retirement in result["is_retirement"].unique().to_list():
+            sleeve = result.filter(pl.col("is_retirement") == is_retirement)
+            assert sleeve["market_cap_tier"].to_list() == ["large_cap", "mid_cap", "small_cap", "emerging"]
+            assert abs(sleeve["portfolio_pct"].sum() - 100.0) < 0.1
+
+    def test_region_comparison_on_fixture_data(self, positions_df):
+        compositions = decomp.load_fund_compositions(TEST_DATA_PATHS.compositions_path)
+        decomposed = decomp.decompose(positions_df, compositions)
+        result = rebalancing.region_comparison(decomposed, rebalancing.load_market_weights())
+        assert len(result) == 7
+        assert result["portfolio_pct"].sum() == pytest.approx(100.0, abs=0.1)
+        assert result["market_pct"].sum() == pytest.approx(100.0, abs=0.1)
+
+        grouped = rebalancing.region_comparison(
+            decomposed, rebalancing.load_market_weights(), by_retirement=True
+        )
+        assert "is_retirement" in grouped.columns
+        for is_retirement in grouped["is_retirement"].unique().to_list():
+            sleeve = grouped.filter(pl.col("is_retirement") == is_retirement)
+            assert sleeve["portfolio_pct"].sum() == pytest.approx(100.0, abs=0.1)
