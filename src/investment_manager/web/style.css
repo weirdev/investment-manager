@@ -288,6 +288,19 @@ html[data-theme="dark"] body {
   animation: fadeSlideUp 0.25s ease-out 0.05s both;
 }
 
+#view .section-title {
+  font-family: 'Cormorant Garamond', Georgia, serif;
+  font-size: 1.6rem;
+  font-weight: 500;
+  color: var(--text);
+  letter-spacing: -0.01em;
+  margin: 2.75rem 0 1.1rem;
+}
+
+#view .section-title:first-of-type {
+  margin-top: 1.5rem;
+}
+
 .total-value {
   font-family: 'Space Mono', 'Courier New', monospace;
   color: var(--gold);

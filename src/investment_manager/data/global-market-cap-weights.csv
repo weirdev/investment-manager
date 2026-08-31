@@ -1,0 +1,8 @@
+region,market_segment,weight
+us,large_cap,0.46
+us,mid_cap,0.09
+us,small_cap,0.06
+ex_us,large_cap,0.21
+ex_us,mid_cap,0.05
+ex_us,small_cap,0.03
+emerging,emerging,0.10

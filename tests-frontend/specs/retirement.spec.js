@@ -31,3 +31,11 @@ test("allocations switches to retirement labels when enabled", async ({ page }) 
   await expect(page.locator(".chart-container")).toContainText(/Retirement|Non-Retirement/);
   await expect(page.locator("thead tr").first()).toContainText(/is retirement/i);
 });
+
+test("rebalancing splits the charts by retirement status when enabled", async ({ page }) => {
+  await gotoRoute(page, "/rebalancing");
+  await expect(page.locator(".section-title")).toHaveCount(2);
+  await toggleSidebarControl(page, "By retirement");
+  await expect(page.locator(".chart-container").first()).toContainText(/Retirement/);
+  await expect(page.locator("thead tr").first()).toContainText(/is retirement/i);
+});

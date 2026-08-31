@@ -176,3 +176,36 @@ class TestDecompositionCommand:
         with patch("investment_manager.cli.pipeline.run", return_value=_empty_df()):
             result = runner.invoke(app, ["decomposition"])
         assert result.exit_code == 1
+
+
+class TestRebalancingCommand:
+    def test_exit_code_0_on_success(self):
+        with patch("investment_manager.cli.pipeline.run", return_value=_mock_df()):
+            result = runner.invoke(app, ["rebalancing"])
+        assert result.exit_code == 0
+
+    def test_total_in_output(self):
+        with patch("investment_manager.cli.pipeline.run", return_value=_mock_df()):
+            result = runner.invoke(app, ["rebalancing"])
+        assert "Total:" in result.output
+
+    def test_both_sections_in_output(self):
+        with patch("investment_manager.cli.pipeline.run", return_value=_mock_df()):
+            result = runner.invoke(app, ["rebalancing"])
+        assert "By market cap:" in result.output
+        assert "By region and cap tier:" in result.output
+
+    def test_exit_code_1_on_empty(self):
+        with patch("investment_manager.cli.pipeline.run", return_value=_empty_df()):
+            result = runner.invoke(app, ["rebalancing"])
+        assert result.exit_code == 1
+
+    def test_exit_code_1_when_no_equities(self):
+        with patch("investment_manager.cli.pipeline.run", return_value=_mock_metals_df()):
+            result = runner.invoke(app, ["rebalancing"])
+        assert result.exit_code == 1
+
+    def test_by_retirement_flag_exits_0(self):
+        with patch("investment_manager.cli.pipeline.run", return_value=_mock_df()):
+            result = runner.invoke(app, ["rebalancing", "--by-retirement"])
+        assert result.exit_code == 0

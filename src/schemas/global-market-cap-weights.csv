@@ -1,0 +1,4 @@
+column_name,type,description
+region,string,Geographic bucket (us | ex_us | emerging)
+market_segment,string,Market-cap tier within the region (large_cap | mid_cap | small_cap; "emerging" for the single emerging row)
+weight,float,Fraction of total global equity market cap; all rows sum to ~1.0. Seed values are approximate FTSE Global All Cap / MSCI ACWI IMI proportions as of early 2026 — tune to taste

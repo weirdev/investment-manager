@@ -17,12 +17,13 @@ for (const route of [
   { hash: "/decomposition", heading: "Decomposition", chart: true },
   { hash: "/allocations", heading: "Allocations", chart: true },
   { hash: "/precious-metals", heading: "Precious Metals", chart: false },
+  { hash: "/rebalancing", heading: "Rebalancing", chart: true },
 ]) {
   test(`renders ${route.hash}`, async ({ page }) => {
     await gotoRoute(page, route.hash);
     await expect(page.locator("#view h2")).toHaveText(route.heading);
     await expect(page.locator(".page-subtitle")).toBeVisible();
-    await expect(page.locator(".table-wrapper")).toBeVisible();
+    await expect(page.locator(".table-wrapper").first()).toBeVisible();
     if (route.chart) {
       await expectChartRendered(page.locator(".chart-container").first());
     }
