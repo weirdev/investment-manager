@@ -186,7 +186,12 @@ python -m uv run invest decomposition --no-account-type   # collapse across acco
 
 ### `invest rebalancing`
 
-Compares the equity sleeve's market-cap tier distribution against a total global market-cap-weighted benchmark. Positions are decomposed look-through first (like `invest decomposition`), filtered to `equities`, and bucketed into four tiers — `large_cap`, `mid_cap`, `small_cap`, and `emerging` (emerging markets is its own tier regardless of company size). Equity value that doesn't resolve to a specific tier after decomposition (broad total-market funds, sector/dividend funds, unmapped tickers) is redistributed across large/mid/small_cap in proportion to the benchmark's developed-market tier weights. Both sides are renormalized to 100% of the equity sleeve; `drift_pct` is your weight minus the market weight, in percentage points.
+Compares the equity sleeve's distribution against a total global market-cap-weighted benchmark, on two axes:
+
+- **By market cap** — four tiers: `large_cap`, `mid_cap`, `small_cap`, and `emerging` (emerging markets is its own tier regardless of company size).
+- **By region and cap tier** — the seven-cell grid `us` / `ex_us` × large/mid/small, plus a single `emerging` cell. Sum the tiers within a region to read the plain regional weight.
+
+Positions are decomposed look-through first (like `invest decomposition`) and filtered to `equities`. Value that doesn't resolve to a specific tier / region (broad total-market funds, sector/dividend funds, unmapped tickers) is redistributed in proportion to the benchmark's weights. Each side is renormalized to 100% of the equity sleeve; `drift_pct` is your weight minus the market weight, in percentage points.
 
 The benchmark weights live in `src/investment_manager/data/global-market-cap-weights.csv` (committed, editable — approximate FTSE Global All Cap / MSCI ACWI IMI proportions).
 
@@ -195,21 +200,34 @@ python -m uv run invest rebalancing
 python -m uv run invest rebalancing --by-retirement   # separate retirement / non-retirement sleeves
 ```
 
-With `--by-retirement` (or the web sidebar's **By retirement** toggle), the equity sleeve is split into retirement and non-retirement halves, each compared to the same benchmark; the output gains a leading `is_retirement` column and each half's `portfolio_pct` sums to 100.
+With `--by-retirement` (or the web sidebar's **By retirement** toggle), the equity sleeve is split into retirement and non-retirement halves, each compared to the same benchmark; both tables gain a leading `is_retirement` column and each half's `portfolio_pct` sums to 100.
 
 **Example output:**
 ```
+By market cap:
 shape: (4, 4)
 ┌─────────────────┬───────────────┬────────────┬───────────┐
 │ market_cap_tier ┆ portfolio_pct ┆ market_pct ┆ drift_pct │
-│ ---             ┆ ---           ┆ ---        ┆ ---       │
-│ str             ┆ f64           ┆ f64        ┆ f64       │
 ╞═════════════════╪═══════════════╪════════════╪═══════════╡
 │ large_cap       ┆ 64.20         ┆ 67.00      ┆ -2.80     │
 │ mid_cap         ┆ 15.70         ┆ 14.00      ┆ 1.70      │
 │ small_cap       ┆ 10.80         ┆ 9.00       ┆ 1.80      │
 │ emerging        ┆ 9.30          ┆ 10.00      ┆ -0.70     │
 └─────────────────┴───────────────┴────────────┴───────────┘
+
+By region and cap tier:
+shape: (7, 5)
+┌──────────┬─────────────────┬───────────────┬────────────┬───────────┐
+│ region   ┆ market_cap_tier ┆ portfolio_pct ┆ market_pct ┆ drift_pct │
+╞══════════╪═════════════════╪═══════════════╪════════════╪═══════════╡
+│ us       ┆ large_cap       ┆ 38.50         ┆ 46.00      ┆ -7.50     │
+│ us       ┆ mid_cap         ┆ 10.10         ┆ 9.00       ┆ 1.10      │
+│ us       ┆ small_cap       ┆ 8.10          ┆ 6.00       ┆ 2.10      │
+│ ex_us    ┆ large_cap       ┆ 25.70         ┆ 21.00      ┆ 4.70      │
+│ ex_us    ┆ mid_cap         ┆ 5.60          ┆ 5.00       ┆ 0.60      │
+│ ex_us    ┆ small_cap       ┆ 2.70          ┆ 3.00       ┆ -0.30     │
+│ emerging ┆ emerging        ┆ 9.30          ┆ 10.00      ┆ -0.70     │
+└──────────┴─────────────────┴───────────────┴────────────┴───────────┘
 Total: $181,282.10
 ```
 
