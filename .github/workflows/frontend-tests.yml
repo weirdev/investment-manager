@@ -29,7 +29,10 @@ jobs:
         run: uv run pytest tests -q
 
   frontend-tests:
-    runs-on: ubuntu-latest
+    # Runs on Windows so it matches the checked-in Playwright visual baselines
+    # (tests-frontend/specs/visual.spec.js-snapshots/*-win32.png), which are
+    # generated on the maintainer's Windows machine.
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
@@ -52,7 +55,7 @@ jobs:
         run: npm ci
 
       - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium
 
       - name: Run frontend tests
         run: npm run test:frontend
