@@ -192,7 +192,10 @@ The benchmark weights live in `src/investment_manager/data/global-market-cap-wei
 
 ```bash
 python -m uv run invest rebalancing
+python -m uv run invest rebalancing --by-retirement   # separate retirement / non-retirement sleeves
 ```
+
+With `--by-retirement` (or the web sidebar's **By retirement** toggle), the equity sleeve is split into retirement and non-retirement halves, each compared to the same benchmark; the output gains a leading `is_retirement` column and each half's `portfolio_pct` sums to 100.
 
 **Example output:**
 ```
